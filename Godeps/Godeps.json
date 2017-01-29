@@ -4,9 +4,31 @@
 	"GodepVersion": "v75",
 	"Deps": [
 		{
+			"ImportPath": "github.com/spaolacci/murmur3",
+			"Rev": "0d12bf811670bf6a1a63828dfbd003eded177fce"
+		},
+		{
 			"ImportPath": "github.com/urfave/cli",
 			"Comment": "v1.19.1",
 			"Rev": "0bdeddeeb0f650497d603c4ad7b20cfe685682f6"
+		},
+		{
+			"ImportPath": "github.com/willf/bitset",
+			"Comment": "v1.0.0-88-g5c3c0fc",
+			"Rev": "5c3c0fce48842b2c0bbaa99b4e61b0175d84b47c"
+		},
+		{
+			"ImportPath": "github.com/willf/bloom",
+			"Comment": "v2.0.0-13-g278d7d8",
+			"Rev": "278d7d8b14584245fe9f826a30e48d4301bd6fd9"
+		},
+		{
+			"ImportPath": "golang.org/x/net/html",
+			"Rev": "da2b4fa28524a3baf148c1b94df4440267063c88"
+		},
+		{
+			"ImportPath": "golang.org/x/net/html/atom",
+			"Rev": "da2b4fa28524a3baf148c1b94df4440267063c88"
 		}
 	]
 }
