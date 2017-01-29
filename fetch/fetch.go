@@ -2,66 +2,81 @@ package fetch
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 )
 
-// Fetcher is an interface
+// Fetcher is an Asynchronous interface
 type Fetcher interface {
-	// Fetch provides work to the Fetcher
+	// Fetch provides work to the Fetcher, in the
+	// form of a URL to process
 	Fetch(url string) error
 
-	// Retrieve provides work back from the Fetcher
-	Retrieve() (Response string, err error)
+	// Retrieve provides results back from the Fetcher
+	// in the form of a Response
+	Retrieve() (Response io.ReadCloser, err error)
+}
+
+// HttpClient interface is
+type HttpClient interface {
+	// Get
+	Get(url string) (resp *http.Response, err error)
 }
 
 func NewAsyncHttpFetcher() *AsyncHttpFetcher {
 	reqQueue := make(RequestQueue)
 	resQueue := make(ResponseQueue)
 	a := &AsyncHttpFetcher{
+		client:        &http.Client{},
 		requestQueue:  &reqQueue,
 		responseQueue: &resQueue,
 	}
-	go a.Run()
+	a.Run()
 
 	return a
 }
 
 type RequestQueue chan string
-type ResponseQueue chan string
+type ResponseQueue chan io.ReadCloser
 
 // AsyncHttpFetcher implements Fetcher
 type AsyncHttpFetcher struct {
 	requestQueue  *RequestQueue
 	responseQueue *ResponseQueue
+
+	client HttpClient
 }
 
 func (a *AsyncHttpFetcher) Fetch(url string) error {
-
-	fmt.Printf("Adding URL %s to request queue\n", url)
+	fmt.Printf("Fetcher: Adding URL %s to request queue\n", url)
 	*a.requestQueue <- url
 	return nil
 }
 
-func (a *AsyncHttpFetcher) Retrieve() (Response string, err error) {
-	fmt.Printf("Waiting for response...")
+func (a *AsyncHttpFetcher) Retrieve() (Response io.ReadCloser, err error) {
+	fmt.Printf("Fetcher: Waiting for response...")
 	Response = <-*a.responseQueue
 	fmt.Printf("Done\n")
 	return Response, nil
 }
 
-func (a *AsyncHttpFetcher) fetch(url string) (Response string, err error) {
-	res, err := http.Get(url)
-	body := make([]byte, 100000)
-	res.Body.Read(body)
-	return string(body), err
+// FIXME - This might not be needed
+func (a *AsyncHttpFetcher) get(url string) (Response io.ReadCloser, err error) {
+	res, err := a.client.Get(url)
+	return res.Body, err
 }
 
 func (a *AsyncHttpFetcher) Run() {
+	go a.background()
+}
+
+func (a *AsyncHttpFetcher) background() {
 	for {
 		select {
 		case req := <-*a.requestQueue:
-			fmt.Printf("Fetching Url %s\n", req)
-			res, _ := a.fetch(req)
+			res, _ := a.get(req)
+			// sres := make([]byte, 1000000)
+			// res.Read(sres)
 			*a.responseQueue <- res
 		default:
 
