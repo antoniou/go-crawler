@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-type ResponseQueue chan string
+type ResponseQueue chan *Message
 
 // Parser is an Asynchronous interface
 type Parser interface {
@@ -20,12 +20,17 @@ type Parser interface {
 
 	// Retrieve provides results back from the Parser
 	// in the form of Urls
-	Retrieve() (url string, err error)
+	Retrieve() (m *Message, err error)
 }
 
 type AsynchHttpParser struct {
 	ResponseQueue *ResponseQueue
 	seed          *url.URL
+}
+
+type Message struct {
+	Request  *url.URL
+	Response *string
 }
 
 func NewAsynchHttpParser(seedUrl *url.URL) *AsynchHttpParser {
@@ -85,7 +90,10 @@ func (p *AsynchHttpParser) extractLinks(res *fetch.Message) error {
 			}
 			if (hasProto && inSeedDomain) || isRelative {
 				normURL := p.normalise(url)
-				*p.ResponseQueue <- normURL
+				*p.ResponseQueue <- &Message{
+					Request:  res.Request,
+					Response: &normURL,
+				}
 			}
 		}
 	}
@@ -93,10 +101,10 @@ func (p *AsynchHttpParser) extractLinks(res *fetch.Message) error {
 	return nil
 }
 
-func (p *AsynchHttpParser) Retrieve() (url string, err error) {
-	url = <-*p.ResponseQueue
-	fmt.Printf("Parser: Passing %s to Tracker\n", url)
-	return url, nil
+func (p *AsynchHttpParser) Retrieve() (m *Message, err error) {
+	m = <-*p.ResponseQueue
+	fmt.Printf("Parser: %s -> %s\n", m.Request.String(), *m.Response)
+	return m, nil
 
 }
 

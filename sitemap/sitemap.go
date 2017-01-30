@@ -9,23 +9,36 @@ import (
 type Sitemapper interface {
 	// Add creates a representation of the
 	// quad to the Sitemapper
-	Add(quad string) error
+	Add(from string, to string) error
 }
 
 type GraphSitemap struct {
-	graph *graph.Graph
+	graph   *graph.Graph
+	nodemap map[string]*graph.Node
 }
 
 func New() *GraphSitemap {
+	nodemap := make(map[string]*graph.Node)
 	return &GraphSitemap{
-		graph: graph.New(graph.Directed),
+		graph:   graph.New(graph.Directed),
+		nodemap: nodemap,
 	}
 }
 
-func (s *GraphSitemap) Add(quad string) error {
-	fmt.Printf("Adding node for %s\n", quad)
+func (s *GraphSitemap) Add(from string, to string) error {
+	fmt.Printf("1.Adding node for %s\n", to)
 	node := s.graph.MakeNode()
-	*node.Value = quad
+	*node.Value = to
+	s.nodemap[to] = &node
+
+	_, ok := s.nodemap[from]
+	if !ok {
+		fmt.Printf("1.Adding node for %s\n", from)
+		nodeFrom := s.graph.MakeNode()
+		*nodeFrom.Value = from
+		s.nodemap[from] = &nodeFrom
+	}
+	s.graph.MakeEdge(*s.nodemap[from], node)
 
 	return nil
 }

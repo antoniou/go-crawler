@@ -33,18 +33,18 @@ func (t *AsynchHttpTracker) Run(parser parse.Parser, fetcher fetch.Fetcher) erro
 	for {
 		fmt.Println("Tracker: Waiting for input from Parser")
 		res, _ := parser.Retrieve()
-		if !t.filter.TestAndAddString(res) {
+		if !t.filter.TestAndAddString(*res.Response) {
 
 			// Adding to sitemapper
-			t.sitemapper.Add(res)
-			url, err := url.ParseRequestURI(res)
+			t.sitemapper.Add(res.Request.String(), *res.Response)
+			url, err := url.ParseRequestURI(*res.Response)
 			if err != nil {
 				return err
 			}
 			fmt.Printf("Tracker: Requesting to fetch %s from Fetcher\n", url)
 			go fetcher.Fetch(url)
 		} else {
-			fmt.Printf("Tracker: Url %s is already in bloom filter\n", res)
+			fmt.Printf("Tracker: Url %s is already in bloom filter\n", *res.Response)
 		}
 	}
 
