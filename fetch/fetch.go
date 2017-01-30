@@ -15,7 +15,7 @@ type Fetcher interface {
 
 	// Retrieve provides results back from the Fetcher
 	// in the form of a Response
-	Retrieve() (Response io.ReadCloser, err error)
+	Retrieve() (Response *Message, err error)
 
 	// Run starts the Fetcher
 	Run() error
@@ -39,8 +39,13 @@ func NewAsyncHttpFetcher() *AsyncHttpFetcher {
 	return a
 }
 
+type Message struct {
+	Request  *url.URL
+	Response io.ReadCloser
+}
+
 type RequestQueue chan url.URL
-type ResponseQueue chan io.ReadCloser
+type ResponseQueue chan *Message
 
 // AsyncHttpFetcher implements Fetcher
 type AsyncHttpFetcher struct {
@@ -56,7 +61,7 @@ func (a *AsyncHttpFetcher) Fetch(url *url.URL) error {
 	return nil
 }
 
-func (a *AsyncHttpFetcher) Retrieve() (Response io.ReadCloser, err error) {
+func (a *AsyncHttpFetcher) Retrieve() (Response *Message, err error) {
 	Response = <-*a.responseQueue
 	fmt.Printf("Fetcher: Passing result to Parser\n")
 	return Response, nil
@@ -75,7 +80,10 @@ func (a *AsyncHttpFetcher) Run() error {
 			fmt.Printf("Fetcher: Going to fetch url %s\n", req.String())
 			res, _ := a.get(req)
 			// fmt.Printf("Fetcher: Waiting for result of get to %s\n", req.String())
-			*a.responseQueue <- res
+			*a.responseQueue <- &Message{
+				Request:  &req,
+				Response: res,
+			}
 			fmt.Printf("Fetcher: Got result of get to %s\n", req.String())
 		default:
 

@@ -2,7 +2,6 @@ package parse
 
 import (
 	"fmt"
-	"io"
 	"net/url"
 	"strings"
 
@@ -42,12 +41,13 @@ func (p *AsynchHttpParser) Run(fetcher fetch.Fetcher) error {
 	for {
 		fmt.Println("Parser: Waiting for response from fetcher...")
 		res, _ := fetcher.Retrieve()
+
 		p.extractLinks(res)
 	}
 }
 
-func (p *AsynchHttpParser) extractLinks(res io.ReadCloser) error {
-	z := html.NewTokenizer(res)
+func (p *AsynchHttpParser) extractLinks(res *fetch.Message) error {
+	z := html.NewTokenizer(res.Response)
 	done := false
 	for {
 		if done {
