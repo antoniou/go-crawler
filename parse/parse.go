@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 
@@ -82,9 +83,9 @@ func (p *AsynchHttpParser) extractLinks(res *fetch.Message) error {
 			if isRelative {
 				url = fmt.Sprintf("%s%s", p.seed.String(), url)
 			}
-
-			if hasProto && inSeedDomain || isRelative {
-				*p.ResponseQueue <- url
+			if (hasProto && inSeedDomain) || isRelative {
+				normURL := p.normalise(url)
+				*p.ResponseQueue <- normURL
 			}
 		}
 	}
@@ -96,6 +97,20 @@ func (p *AsynchHttpParser) Retrieve() (url string, err error) {
 	url = <-*p.ResponseQueue
 	fmt.Printf("Parser: Passing %s to Tracker\n", url)
 	return url, nil
+
+}
+
+// Helper function to bring Url to its normalised form
+// by removing querystrings and reconstructing absolute
+// path URLs
+func (p *AsynchHttpParser) normalise(path string) string {
+	normURL := path
+	parsedURL, err := url.ParseRequestURI(normURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return strings.TrimSuffix(path, "?"+parsedURL.RawQuery)
 }
 
 // Helper function to pull the href attribute from a Token
