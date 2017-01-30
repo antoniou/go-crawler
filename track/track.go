@@ -6,6 +6,7 @@ import (
 
 	"github.com/antoniou/go-crawler/fetch"
 	"github.com/antoniou/go-crawler/parse"
+	"github.com/antoniou/go-crawler/sitemap"
 	"github.com/willf/bloom"
 )
 
@@ -14,13 +15,15 @@ type Tracker interface {
 }
 
 type AsynchHttpTracker struct {
-	filter *bloom.BloomFilter
+	filter     *bloom.BloomFilter
+	sitemapper sitemap.Sitemapper
 }
 
 func New() *AsynchHttpTracker {
 	filter := bloom.New(20000, 5)
 	t := &AsynchHttpTracker{
-		filter: filter,
+		filter:     filter,
+		sitemapper: sitemap.New(),
 	}
 	return t
 }
@@ -31,6 +34,9 @@ func (t *AsynchHttpTracker) Run(parser parse.Parser, fetcher fetch.Fetcher) erro
 		fmt.Println("Tracker: Waiting for input from Parser")
 		res, _ := parser.Retrieve()
 		if !t.filter.TestAndAddString(res) {
+
+			// Adding to sitemapper
+			t.sitemapper.Add(res)
 			url, err := url.ParseRequestURI(res)
 			if err != nil {
 				return err
