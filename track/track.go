@@ -11,28 +11,42 @@ import (
 )
 
 type Tracker interface {
-	Run(parser parse.Parser, fetcher fetch.Fetcher) error
+	// Retrieve Worker
+	Worker() fetch.Worker
 }
 
-type AsynchHttpTracker struct {
+type AsyncHttpTracker struct {
+	//Tracker is an Asynchronous Worker
+	*fetch.AsyncWorker
+
 	filter     *bloom.BloomFilter
 	sitemapper sitemap.Sitemapper
+	fetcher    fetch.Fetcher
+	parser     parse.Parser
 }
 
-func New() *AsynchHttpTracker {
+func New(fetcher fetch.Fetcher, parser parse.Parser) *AsyncHttpTracker {
 	filter := bloom.New(20000, 5)
-	t := &AsynchHttpTracker{
+	t := &AsyncHttpTracker{
+		AsyncWorker: &fetch.AsyncWorker{
+			Name: "Tracker",
+		},
+
 		filter:     filter,
+		fetcher:    fetcher,
+		parser:     parser,
 		sitemapper: sitemap.New(),
 	}
+	t.AsyncWorker.RunFunc = t.Run
 	return t
 }
 
-func (t *AsynchHttpTracker) Run(parser parse.Parser, fetcher fetch.Fetcher) error {
-	fmt.Println("Tracker: Starting...")
+func (t *AsyncHttpTracker) Run() error {
+	t.AsyncWorker.SetState(fetch.RUNNING)
 	for {
-		fmt.Println("Tracker: Waiting for input from Parser")
-		res, _ := parser.Retrieve()
+		t.AsyncWorker.SetState(fetch.WAITING)
+		res, _ := t.parser.Retrieve()
+		t.AsyncWorker.SetState(fetch.RUNNING)
 		if !t.filter.TestAndAddString(*res.Response) {
 
 			// Adding to sitemapper
@@ -42,10 +56,13 @@ func (t *AsynchHttpTracker) Run(parser parse.Parser, fetcher fetch.Fetcher) erro
 				return err
 			}
 			fmt.Printf("Tracker: Requesting to fetch %s from Fetcher\n", url)
-			go fetcher.Fetch(url)
+			go t.fetcher.Fetch(url)
 		} else {
 			fmt.Printf("Tracker: Url %s is already in bloom filter\n", *res.Response)
 		}
 	}
+}
 
+func (t *AsyncHttpTracker) Worker() fetch.Worker {
+	return t.AsyncWorker
 }

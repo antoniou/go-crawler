@@ -3,7 +3,6 @@ package client
 import (
 	"log"
 	"net/url"
-	"time"
 
 	"github.com/antoniou/go-crawler/crawl"
 	"github.com/antoniou/go-crawler/fetch"
@@ -41,15 +40,19 @@ func (c *CrawlCommand) Run(args []string) error {
 	}
 
 	fetcher := fetch.NewAsyncHttpFetcher()
-	parser := parse.NewAsynchHttpParser(url)
-	tracker := track.New()
+	parser := parse.NewAsyncHttpParser(url, fetcher)
+	tracker := track.New(fetcher, parser)
+
 	crawler := crawl.New(
 		fetcher,
-		parser,
-		tracker,
+		[]fetch.Worker{
+			fetcher.Worker(),
+			parser.Worker(),
+			tracker.Worker(),
+		},
 	)
 
 	crawler.Crawl(url)
-	time.Sleep(100 * time.Second)
+
 	return nil
 }

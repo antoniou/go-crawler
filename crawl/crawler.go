@@ -3,6 +3,7 @@ package crawl
 import (
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/antoniou/go-crawler/fetch"
 	"github.com/antoniou/go-crawler/parse"
@@ -15,12 +16,12 @@ type Crawler interface {
 	Crawl(url string) error
 }
 
-func New(f fetch.Fetcher, p parse.Parser, t track.Tracker) *AsyncHttpCrawler {
+func New(f fetch.Fetcher, workers []fetch.Worker) *AsyncHttpCrawler {
 	c := &AsyncHttpCrawler{
 		fetcher: f,
-		parser:  p,
-		tracker: t,
+		workers: workers,
 	}
+
 	return c
 }
 
@@ -28,14 +29,32 @@ type AsyncHttpCrawler struct {
 	fetcher fetch.Fetcher
 	parser  parse.Parser
 	tracker track.Tracker
+	workers []fetch.Worker
 }
 
 func (c *AsyncHttpCrawler) Crawl(url *url.URL) error {
-	go c.parser.Run(c.fetcher)
-	go c.tracker.Run(c.parser, c.fetcher)
-	go c.fetcher.Run()
-	fmt.Printf("Crawler: Start crawling with url %v\n", url)
+	for _, worker := range c.workers {
+		fmt.Printf("Starting worker of type %v\n", worker.Type())
+		go worker.Run()
+	}
 	go c.fetcher.Fetch(url)
+	c.join()
 
 	return nil
+}
+
+func (c *AsyncHttpCrawler) join() {
+	for {
+		time.Sleep(1 * time.Second)
+		var state uint8
+		state = fetch.WAITING
+		for _, worker := range c.workers {
+			state += worker.State()
+		}
+		if state == fetch.WAITING {
+			fmt.Println("All workers are in waiting state, crawling complete")
+			return
+		}
+
+	}
 }
