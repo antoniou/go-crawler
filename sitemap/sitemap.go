@@ -13,8 +13,10 @@ type Sitemapper interface {
 }
 
 type GraphSitemap struct {
-	graph   *graph.Graph
-	nodemap map[string]*graph.Node
+	graph    *graph.Graph
+	nodemap  map[string]*graph.Node
+	hasNodes bool
+	root     *graph.Node
 }
 
 func New() *GraphSitemap {
@@ -37,6 +39,11 @@ func (s *GraphSitemap) Add(from string, to string) error {
 		nodeFrom := s.graph.MakeNode()
 		*nodeFrom.Value = from
 		s.nodemap[from] = &nodeFrom
+		if !s.hasNodes {
+			fmt.Printf("Root node is %s\n", from)
+			s.hasNodes = true
+			s.root = &nodeFrom
+		}
 	}
 	s.graph.MakeEdge(*s.nodemap[from], node)
 
