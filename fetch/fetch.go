@@ -2,7 +2,6 @@ package fetch
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 )
@@ -21,17 +20,28 @@ type Fetcher interface {
 	Worker() Worker
 }
 
+// Message is a struct used to pass results of a Fetch
+// request back to the requester. It includes
+// Request: The original request (for tracking)
+// Response
+// Error in case request could not finish successfully
 type Message struct {
 	Request  *url.URL
-	Response io.ReadCloser
+	Response *http.Response
+	Error    error
 }
 
+// RequestQueue is used for incoming
+// requests to the fetcher
 type RequestQueue chan url.URL
+
+// ResponseQueue queue is used for outgoing
+// responses from the Fetcher
 type ResponseQueue chan *Message
 
-// AsyncHttpFetcher implements Fetcher
-type AsyncHttpFetcher struct {
-	//AsyncHttpFetcher is an Asynchronous Worker
+// AsyncHTTPFetcher implements Fetcher
+type AsyncHTTPFetcher struct {
+	//AsyncHTTPFetcher is an Asynchronous Worker
 	*AsyncWorker
 
 	requestQueue  *RequestQueue
@@ -40,13 +50,15 @@ type AsyncHttpFetcher struct {
 	client HTPPClient
 }
 
-func NewAsyncHttpFetcher() *AsyncHttpFetcher {
+// NewAsyncHTTPFetcher is a constructor for a
+// AsyncHTTPFetcher. It does not start the
+// Fetcher, which should be done by using the
+// Run method
+func NewAsyncHTTPFetcher() *AsyncHTTPFetcher {
 	reqQueue := make(RequestQueue)
 	resQueue := make(ResponseQueue)
-	a := &AsyncHttpFetcher{
-		AsyncWorker: &AsyncWorker{
-			Name: "Fetcher",
-		},
+	a := &AsyncHTTPFetcher{
+		AsyncWorker: NewAsyncWorker("Fetcher"),
 
 		client:        &http.Client{},
 		requestQueue:  &reqQueue,
@@ -57,29 +69,41 @@ func NewAsyncHttpFetcher() *AsyncHttpFetcher {
 	return a
 }
 
-func (a *AsyncHttpFetcher) Fetch(url *url.URL) error {
+// Fetch places a request for a URL into the requestQueue
+// Returns nil on success and an error in case the url
+// is not valid
+func (a *AsyncHTTPFetcher) Fetch(url *url.URL) error {
+	if err := a.validate(url); err != nil {
+		return err
+	}
 	fmt.Printf("Fetcher: Adding URL %v to request queue\n", url)
 	*a.requestQueue <- *url
 	return nil
 }
 
-func (a *AsyncHttpFetcher) Retrieve() (Response *Message, err error) {
+// Retrieve blocks waiting for responses to
+// requests previously created with Fetch
+func (a *AsyncHTTPFetcher) Retrieve() (Response *Message, err error) {
 	Response = <-*a.responseQueue
-	fmt.Printf("Fetcher: Passing result to Parser\n")
-	return Response, nil
+	fmt.Printf("Fetcher: Passing result to Parser %v\n", *Response)
+	return Response, Response.Error
 }
 
 // FIXME - This might not be needed
-func (a *AsyncHttpFetcher) get(url url.URL) (Response io.ReadCloser, err error) {
-	res, err := a.client.Get(url.String())
-	return res.Body, err
+func (a *AsyncHTTPFetcher) get(url url.URL) (Response *http.Response, err error) {
+	return a.client.Get(url.String())
 }
 
-func (a *AsyncHttpFetcher) Worker() Worker {
+// Worker Returns the embedded AsyncWorker struct
+// which is used to Run and Stop the fetcher worker
+func (a *AsyncHTTPFetcher) Worker() Worker {
 	return a.AsyncWorker
 }
 
-func (a *AsyncHttpFetcher) Run() error {
+// Run starts a loop that waits for requests
+// or the quit signal. Run will be interrupted
+// once the Stop method is used
+func (a *AsyncHTTPFetcher) Run() error {
 	a.AsyncWorker.SetState(RUNNING)
 	for {
 		a.AsyncWorker.SetState(WAITING)
@@ -88,10 +112,11 @@ func (a *AsyncHttpFetcher) Run() error {
 		// A request is received
 		case req := <-*a.requestQueue:
 			a.AsyncWorker.SetState(RUNNING)
-			res, _ := a.get(req)
+			res, err := a.get(req)
 			*a.responseQueue <- &Message{
 				Request:  &req,
 				Response: res,
+				Error:    err,
 			}
 
 		// A quit has been received, Stop has been invoked
@@ -101,4 +126,12 @@ func (a *AsyncHttpFetcher) Run() error {
 		default:
 		}
 	}
+}
+
+func (a *AsyncHTTPFetcher) validate(uri *url.URL) error {
+	if uri.Scheme != "http" && uri.Scheme != "https" {
+		return fmt.Errorf("Unsupported uri scheme %s", uri.Scheme)
+	}
+
+	return nil
 }

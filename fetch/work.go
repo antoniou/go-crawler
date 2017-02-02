@@ -30,6 +30,14 @@ type Worker interface {
 	SetState(state uint8)
 }
 
+func NewAsyncWorker(name string) *AsyncWorker {
+	quit := make(chan uint8)
+	return &AsyncWorker{
+		Name: "Fetcher",
+		quit: quit,
+	}
+}
+
 // AsyncWorker implements the worker interface
 // It is meant to be embedded in another struct,
 // like AsyncHttpFetcher
