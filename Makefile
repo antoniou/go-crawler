@@ -51,4 +51,4 @@ lint:
 unit: get-deps-tests build verify
 		@echo "go test SDK and vendor packages"
 		# @go test -tags ${UNIT_TEST_TAGS} $(SDK_UNIT_TEST_ONLY_PKGS)
-		@go test ./domain -cover -v
+		@go test ./... -cover -v
