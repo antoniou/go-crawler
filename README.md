@@ -1,6 +1,5 @@
-[![Build Status](https://travis-ci.org/antoniou/go-crawler.svg?branch=master)](https://travis-ci.org/antoniou/go-crawler)
+# go-crawler [![Build Status](https://travis-ci.org/antoniou/go-crawler.svg?branch=master)](https://travis-ci.org/antoniou/go-crawler)
 
-# go-crawler
 A Web Crawler written in Go
 
 ## Assumptions
