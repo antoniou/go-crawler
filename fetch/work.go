@@ -30,10 +30,12 @@ type Worker interface {
 	SetState(state uint8)
 }
 
+// NewAsyncWorker is a constructor for a
+// AsyncWorker.
 func NewAsyncWorker(name string) *AsyncWorker {
 	quit := make(chan uint8)
 	return &AsyncWorker{
-		Name: "Fetcher",
+		Name: name,
 		quit: quit,
 	}
 }

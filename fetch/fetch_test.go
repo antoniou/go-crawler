@@ -13,11 +13,11 @@ import (
 )
 
 // Define a mock struct to be used in your unit tests of myFunc.
-type mockHttpClient struct {
+type mockHTTPClient struct {
 	mock.Mock
 }
 
-func (m *mockHttpClient) Get(url string) (resp *http.Response, err error) {
+func (m *mockHTTPClient) Get(url string) (resp *http.Response, err error) {
 
 	if strings.Contains(url, "nonexistingwebsite") {
 		return nil, fmt.Errorf("no such host")
@@ -43,12 +43,12 @@ func NewMockFetcher() *AsyncHTTPFetcher {
 	a := &AsyncHTTPFetcher{
 		AsyncWorker: NewAsyncWorker("MockFetcher"),
 
-		client:        &mockHttpClient{},
+		client:        &mockHTTPClient{},
 		requestQueue:  &reqQueue,
 		responseQueue: &resQueue,
 	}
 	a.AsyncWorker.RunFunc = a.Run
-	go a.Run()
+	go a.AsyncWorker.Run()
 	return a
 }
 
@@ -90,6 +90,17 @@ func (suite *FetchTestSuite) TestStopFetcher() {
 	assert.Equal(suite.T(), WAITING, f.AsyncWorker.State())
 	f.Stop()
 	assert.Equal(suite.T(), STOPPED, f.AsyncWorker.State())
+
+	uri, _ := url.ParseRequestURI("https://validurl.com")
+	err := f.Fetch(uri)
+	assert.Error(suite.T(), err)
+	assert.Contains(suite.T(), err.Error(), "is in state stopped")
+}
+
+func (suite *FetchTestSuite) TestNewAsyncHTTPFetcherConstructor() {
+	f := NewAsyncHTTPFetcher()
+	assert.Implements(suite.T(), (*Fetcher)(nil), f)
+	assert.NotNil(suite.T(), f)
 }
 
 func TestFetchTestSuite(t *testing.T) {

@@ -73,6 +73,9 @@ func NewAsyncHTTPFetcher() *AsyncHTTPFetcher {
 // Returns nil on success and an error in case the url
 // is not valid
 func (a *AsyncHTTPFetcher) Fetch(url *url.URL) error {
+	if a.AsyncWorker.State() == STOPPED {
+		return fmt.Errorf("%s is in state stopped", a.AsyncWorker.Type())
+	}
 	if err := a.validate(url); err != nil {
 		return err
 	}
