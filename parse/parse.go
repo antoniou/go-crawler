@@ -58,14 +58,18 @@ func (p *AsyncHttpParser) Run() error {
 	p.AsyncWorker.SetState(fetch.RUNNING)
 	for {
 		p.AsyncWorker.SetState(fetch.WAITING)
-		res, _ := p.fetcher.Retrieve()
+		res, err := p.fetcher.Retrieve()
+		if err != nil {
+			log.Printf("Could not get %s: %v", res.Request.String(), err)
+			continue
+		}
 		p.AsyncWorker.SetState(fetch.RUNNING)
 		p.extractLinks(res)
 	}
 }
 
 func (p *AsyncHttpParser) extractLinks(res *fetch.Message) error {
-	z := html.NewTokenizer(res.Response)
+	z := html.NewTokenizer(res.Response.Body)
 	done := false
 	for {
 		if done {

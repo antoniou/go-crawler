@@ -36,10 +36,11 @@ func (c *CrawlCommand) Run(args []string) error {
 
 	url, err := url.ParseRequestURI(args[0])
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
-	fetcher := fetch.NewAsyncHttpFetcher()
+	fetcher := fetch.NewAsyncHTTPFetcher()
 	parser := parse.NewAsyncHttpParser(url, fetcher)
 	tracker := track.New(fetcher, parser)
 
@@ -52,7 +53,11 @@ func (c *CrawlCommand) Run(args []string) error {
 		},
 	)
 
-	crawler.Crawl(url)
+	err = crawler.Crawl(url)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 
 	return nil
 }

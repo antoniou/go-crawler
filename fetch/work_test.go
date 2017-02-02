@@ -37,7 +37,6 @@ func (e *Encapsulator) mockedMethodStopChannel() error {
 	default:
 		return nil
 	}
-	// return nil
 }
 
 func NewEncapsulator() *Encapsulator {

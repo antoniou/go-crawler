@@ -37,7 +37,10 @@ func (c *AsyncHttpCrawler) Crawl(url *url.URL) error {
 		fmt.Printf("Starting worker of type %v\n", worker.Type())
 		go worker.Run()
 	}
-	go c.fetcher.Fetch(url)
+	err := c.fetcher.Fetch(url)
+	if err != nil {
+		return err
+	}
 	c.join()
 
 	return nil
