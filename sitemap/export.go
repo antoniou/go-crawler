@@ -26,8 +26,7 @@ func (f *FileExporter) Export(s Sitemapper) error {
 		return err
 	}
 
-	f.writer.Close()
-	return nil
+	return f.writer.Close()
 }
 
 func (f *FileExporter) exportRecursive(s Sitemapper, node string, indentation string) error {
@@ -38,7 +37,7 @@ func (f *FileExporter) exportRecursive(s Sitemapper, node string, indentation st
 
 	if !f.filter.TestAndAddString(node) {
 		ind := indentation + "  "
-		links := *s.LinksFrom(s.SeedURL())
+		links := *s.LinksFrom(node)
 		for _, link := range links {
 			f.exportRecursive(s, link, ind)
 		}

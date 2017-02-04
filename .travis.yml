@@ -17,6 +17,7 @@ install:
 
 script:
   - make unit
+  - make integration
 
 matrix:
   allow_failures:

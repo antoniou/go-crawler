@@ -49,6 +49,7 @@ lint:
 	@lint=`if [ \( -z "${SDK_GO_1_4}" \) -a \( -z "${SDK_GO_1_5}" \) ]; then  golint ./...; else echo "skipping golint"; fi`; \
 
 unit: get-deps-tests build verify
-		@echo "go test SDK and vendor packages"
-		# @go test -tags ${UNIT_TEST_TAGS} $(SDK_UNIT_TEST_ONLY_PKGS)
 		@go test ./... -cover -v
+
+integration: get-deps-tests build verify
+		@go test ./... -cover --tags=integration
