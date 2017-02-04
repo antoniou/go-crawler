@@ -4,8 +4,29 @@
 	"GodepVersion": "v75",
 	"Deps": [
 		{
+			"ImportPath": "github.com/PuerkitoBio/purell",
+			"Comment": "v1.1.0",
+			"Rev": "0bcb03f4b4d0a9428594752bd2a3b9aa0a9d4bd4"
+		},
+		{
+			"ImportPath": "github.com/PuerkitoBio/urlesc",
+			"Rev": "5bd2802263f21d8788851d5305584c82a5c75d7e"
+		},
+		{
+			"ImportPath": "github.com/goware/urlx",
+			"Rev": "8bb4a2e4339f55b15164907177e96e9faf885504"
+		},
+		{
 			"ImportPath": "github.com/spaolacci/murmur3",
 			"Rev": "0d12bf811670bf6a1a63828dfbd003eded177fce"
+		},
+		{
+			"ImportPath": "github.com/twmb/algoimpl/go/graph",
+			"Rev": "716f8e78b563212cfefb120bedc265741f51d1a4"
+		},
+		{
+			"ImportPath": "github.com/twmb/algoimpl/go/graph/lite",
+			"Rev": "716f8e78b563212cfefb120bedc265741f51d1a4"
 		},
 		{
 			"ImportPath": "github.com/urfave/cli",
@@ -29,6 +50,30 @@
 		{
 			"ImportPath": "golang.org/x/net/html/atom",
 			"Rev": "da2b4fa28524a3baf148c1b94df4440267063c88"
+		},
+		{
+			"ImportPath": "golang.org/x/net/idna",
+			"Rev": "da2b4fa28524a3baf148c1b94df4440267063c88"
+		},
+		{
+			"ImportPath": "golang.org/x/text/secure/bidirule",
+			"Rev": "44f4f658a783b0cee41fe0a23b8fc91d9c120558"
+		},
+		{
+			"ImportPath": "golang.org/x/text/transform",
+			"Rev": "44f4f658a783b0cee41fe0a23b8fc91d9c120558"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/bidi",
+			"Rev": "44f4f658a783b0cee41fe0a23b8fc91d9c120558"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/norm",
+			"Rev": "44f4f658a783b0cee41fe0a23b8fc91d9c120558"
+		},
+		{
+			"ImportPath": "golang.org/x/text/width",
+			"Rev": "44f4f658a783b0cee41fe0a23b8fc91d9c120558"
 		}
 	]
 }
