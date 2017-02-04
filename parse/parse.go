@@ -25,7 +25,7 @@ type Parser interface {
 	Worker() fetch.Worker
 }
 
-type AsyncHttpParser struct {
+type AsyncHTTPParser struct {
 	//Fetcher is an Asynchronous Worker
 	*fetch.AsyncWorker
 
@@ -39,36 +39,42 @@ type Message struct {
 	Response *string
 }
 
-func NewAsyncHttpParser(seedUrl *url.URL, fetcher fetch.Fetcher) *AsyncHttpParser {
+func NewAsyncHTTPParser(seedURL *url.URL, fetcher fetch.Fetcher) *AsyncHTTPParser {
 	resQueue := make(ResponseQueue)
-	a := &AsyncHttpParser{
-		AsyncWorker: &fetch.AsyncWorker{
-			Name: "Parser",
-		},
+	a := &AsyncHTTPParser{
+		AsyncWorker: fetch.NewAsyncWorker("Parser"),
 
 		fetcher:       fetcher,
 		ResponseQueue: &resQueue,
-		seed:          seedUrl,
+		seed:          seedURL,
 	}
 	a.AsyncWorker.RunFunc = a.Run
 	return a
 }
 
-func (p *AsyncHttpParser) Run() error {
+func (p *AsyncHTTPParser) Run() error {
 	p.AsyncWorker.SetState(fetch.RUNNING)
 	for {
 		p.AsyncWorker.SetState(fetch.WAITING)
-		res, err := p.fetcher.Retrieve()
-		if err != nil {
-			log.Printf("Could not get %s: %v", res.Request.String(), err)
-			continue
+		select {
+		case res := <-*p.fetcher.ResponseChannel():
+			if res.Error != nil {
+				log.Printf("Could not get %s: %v", res.Request.String(), res.Error)
+				continue
+			}
+			p.AsyncWorker.SetState(fetch.RUNNING)
+			p.extractLinks(res)
+
+			// A quit has been received, Stop has been invoked
+		case <-p.AsyncWorker.Quit:
+			p.Worker().SetState(fetch.STOPPED)
+			return nil
 		}
-		p.AsyncWorker.SetState(fetch.RUNNING)
-		p.extractLinks(res)
+
 	}
 }
 
-func (p *AsyncHttpParser) extractLinks(res *fetch.Message) error {
+func (p *AsyncHTTPParser) extractLinks(res *fetch.Message) error {
 	z := html.NewTokenizer(res.Response.Body)
 	done := false
 	for {
@@ -117,21 +123,21 @@ func (p *AsyncHttpParser) extractLinks(res *fetch.Message) error {
 	return nil
 }
 
-func (p *AsyncHttpParser) Retrieve() (m *Message, err error) {
+func (p *AsyncHTTPParser) Retrieve() (m *Message, err error) {
 	m = <-*p.ResponseQueue
 	fmt.Printf("Parser: %s -> %s\n", m.Request.String(), *m.Response)
 	return m, nil
 
 }
 
-func (a *AsyncHttpParser) Worker() fetch.Worker {
+func (a *AsyncHTTPParser) Worker() fetch.Worker {
 	return a.AsyncWorker
 }
 
 // Helper function to bring Url to its normalised form
 // by removing querystrings and reconstructing absolute
 // path URLs
-func (p *AsyncHttpParser) normalise(path string) string {
+func (p *AsyncHTTPParser) normalise(path string) string {
 	normURL := path
 	parsedURL, err := url.ParseRequestURI(normURL)
 	if err != nil {

@@ -36,7 +36,7 @@ func NewAsyncWorker(name string) *AsyncWorker {
 	quit := make(chan uint8)
 	return &AsyncWorker{
 		Name: name,
-		quit: quit,
+		Quit: quit,
 	}
 }
 
@@ -47,7 +47,7 @@ type AsyncWorker struct {
 	RunFunc func() error
 
 	state uint8
-	quit  chan uint8
+	Quit  chan uint8
 	Name  string
 }
 
@@ -56,12 +56,12 @@ func (w *AsyncWorker) Run() error {
 	return w.RunFunc()
 }
 
-// Stop notifies the quit channel
+// Stop notifies the quit channel.
 // The encapsulating struct's RunFunc
 // needs to receive from the quit channel
 // in order to stop.
 func (w *AsyncWorker) Stop() {
-	w.quit <- 0
+	w.Quit <- 0
 }
 
 // State getter (See interface definition)

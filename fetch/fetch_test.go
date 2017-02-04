@@ -58,38 +58,38 @@ func (suite *FetchTestSuite) TestFetchValidAndInvalidResponse() {
 	// Valid Request
 	uri, _ := url.ParseRequestURI("https://validurl.com")
 	f.Fetch(uri)
-	m, err := f.Retrieve()
+	m := <-*f.ResponseChannel()
 
 	assert.Equal(suite.T(), m.Request.String(), uri.String())
-	assert.NoError(suite.T(), err)
+	assert.NoError(suite.T(), m.Error)
 	assert.Equal(suite.T(), "200", m.Response.Status)
 
 	// Invalid Scheme
 	uri, _ = url.ParseRequestURI("ftp://invalidurl")
-	err = f.Fetch(uri)
+	err := f.Fetch(uri)
 	assert.Error(suite.T(), err)
 
 	// Cannot resolve website
 	uri, _ = url.ParseRequestURI("http://nonexistingwebsite.com")
 	f.Fetch(uri)
-	m, err = f.Retrieve()
-	assert.Error(suite.T(), err)
+	m = <-*f.ResponseChannel()
+	assert.Error(suite.T(), m.Error)
 	assert.Nil(suite.T(), m.Response)
 
 	// Website returns 404
 	uri, _ = url.ParseRequestURI("http://iama404response.com")
 	f.Fetch(uri)
-	m, err = f.Retrieve()
+	m = <-*f.ResponseChannel()
 	assert.Equal(suite.T(), "404", m.Response.Status)
-	assert.Nil(suite.T(), err)
+	assert.Nil(suite.T(), m.Error)
 
 }
 
 func (suite *FetchTestSuite) TestStopFetcher() {
 	f := NewMockFetcher()
-	assert.Equal(suite.T(), WAITING, f.AsyncWorker.State())
+	assert.Equal(suite.T(), WAITING, f.Worker().State())
 	f.Stop()
-	assert.Equal(suite.T(), STOPPED, f.AsyncWorker.State())
+	assert.Equal(suite.T(), STOPPED, f.Worker().State())
 
 	uri, _ := url.ParseRequestURI("https://validurl.com")
 	err := f.Fetch(uri)

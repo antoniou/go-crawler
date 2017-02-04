@@ -12,9 +12,10 @@ type Fetcher interface {
 	// form of a URL to process
 	Fetch(url *url.URL) error
 
-	// Retrieve provides results back from the Fetcher
-	// in the form of a Response
-	Retrieve() (Response *Message, err error)
+	// ResponseChannel is a Getter returning
+	// the Fetcher's Channel  that consumers
+	// should be receiving results from
+	ResponseChannel() (responseQueue *ResponseQueue)
 
 	// Retrieve Worker that manages Fetcher Service
 	Worker() Worker
@@ -84,17 +85,10 @@ func (a *AsyncHTTPFetcher) Fetch(url *url.URL) error {
 	return nil
 }
 
-// Retrieve blocks waiting for responses to
-// requests previously created with Fetch
-func (a *AsyncHTTPFetcher) Retrieve() (Response *Message, err error) {
-	Response = <-*a.responseQueue
-	fmt.Printf("Fetcher: Passing result to Parser %v\n", *Response)
-	return Response, Response.Error
-}
-
-// FIXME - This might not be needed
-func (a *AsyncHTTPFetcher) get(url url.URL) (Response *http.Response, err error) {
-	return a.client.Get(url.String())
+// ResponseChannel is a Getter returning the Fetcher's Channel  that consumers
+// should be receiving results from
+func (a *AsyncHTTPFetcher) ResponseChannel() (responseQueue *ResponseQueue) {
+	return a.responseQueue
 }
 
 // Worker Returns the embedded AsyncWorker struct
@@ -122,13 +116,18 @@ func (a *AsyncHTTPFetcher) Run() error {
 				Error:    err,
 			}
 
-		// A quit has been received, Stop has been invoked
-		case <-a.AsyncWorker.quit:
-			a.AsyncWorker.SetState(STOPPED)
+			// A quit has been received, Stop has been invoked
+		case <-a.AsyncWorker.Quit:
+			a.Worker().SetState(STOPPED)
 			return nil
 		default:
 		}
 	}
+}
+
+// FIXME - This might not be needed
+func (a *AsyncHTTPFetcher) get(url url.URL) (Response *http.Response, err error) {
+	return a.client.Get(url.String())
 }
 
 func (a *AsyncHTTPFetcher) validate(uri *url.URL) error {

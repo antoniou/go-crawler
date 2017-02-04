@@ -41,19 +41,18 @@ func (c *CrawlCommand) Run(args []string) error {
 	}
 
 	fetcher := fetch.NewAsyncHTTPFetcher()
-	parser := parse.NewAsyncHttpParser(url, fetcher)
+	parser := parse.NewAsyncHTTPParser(url, fetcher)
 	tracker := track.New(fetcher, parser)
 
-	crawler := crawl.New(
+	crawler := crawl.NewAsyncHTTPCrawler(
 		fetcher,
 		[]fetch.Worker{
-			fetcher.Worker(),
 			parser.Worker(),
 			tracker.Worker(),
 		},
 	)
 
-	err = crawler.Crawl(url)
+	_, err = crawler.Crawl(url)
 	if err != nil {
 		log.Println(err)
 		return err
