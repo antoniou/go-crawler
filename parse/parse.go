@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/antoniou/go-crawler/fetch"
+	"github.com/goware/urlx"
 	"golang.org/x/net/html"
 )
 
@@ -59,6 +60,9 @@ func (p *AsyncHTTPParser) Run() error {
 		select {
 		case res := <-*p.fetcher.ResponseChannel():
 			if res.Error != nil {
+				if res.Request.String() == p.seed.String() {
+					p.Stop()
+				}
 				log.Printf("Could not get %s: %v", res.Request.String(), res.Error)
 				continue
 			}
@@ -104,14 +108,16 @@ func (p *AsyncHTTPParser) extractLinks(res *fetch.Message) error {
 			}
 
 			// Make sure the url begines in http**
-			hasProto := strings.Index(url, "http") == 0
-			inSeedDomain := strings.Index(url, p.seed.String()) == 0
 			isRelative := strings.HasPrefix(url, "/")
 			if isRelative {
-				url = fmt.Sprintf("%s%s", p.seed.String(), url)
+				url = fmt.Sprintf("%s://%s%s", p.seed.Scheme, p.seed.Host, url)
 			}
-			if (hasProto && inSeedDomain) || isRelative {
-				normURL := p.normalise(url)
+			normURL := p.normalise(url)
+			hasProto := strings.Index(normURL, "http") == 0
+			inSeedDomain := strings.Index(normURL, p.seed.String()) == 0
+			// fmt.Printf("Parser %s: Has Proto %v, In Seed domain: %v\n", url, hasProto, inSeedDomain)
+			if hasProto && inSeedDomain {
+				// fmt.Printf("Parser: Sending to Tracker %s\n", normURL)
 				*p.ResponseQueue <- &Message{
 					Request:  res.Request,
 					Response: &normURL,
@@ -125,7 +131,7 @@ func (p *AsyncHTTPParser) extractLinks(res *fetch.Message) error {
 
 func (p *AsyncHTTPParser) Retrieve() (m *Message, err error) {
 	m = <-*p.ResponseQueue
-	fmt.Printf("Parser: %s -> %s\n", m.Request.String(), *m.Response)
+	// fmt.Printf("Parser: %s -> %s\n", m.Request.String(), *m.Response)
 	return m, nil
 
 }
@@ -141,10 +147,13 @@ func (p *AsyncHTTPParser) normalise(path string) string {
 	normURL := path
 	parsedURL, err := url.ParseRequestURI(normURL)
 	if err != nil {
-		log.Fatal(err)
+		return ""
 	}
 
-	return strings.TrimSuffix(path, "?"+parsedURL.RawQuery)
+	// normURL := strings.TrimSuffix(path, "?"+parsedURL.RawQuery)
+	normalized, _ := urlx.Normalize(parsedURL)
+	// fmt.Printf("\n\nParser: Normalised url for %s is %s\n\n", path, normalized)
+	return normalized
 }
 
 // Helper function to pull the href attribute from a Token

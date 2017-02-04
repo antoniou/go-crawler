@@ -13,6 +13,12 @@ import (
 type Tracker interface {
 	// Retrieve Worker
 	Worker() fetch.Worker
+
+	// SetSitemapper provides the Tracker with
+	// a Sitemapper. The Tracker is responsible for
+	// building the providing the Sitemapper with
+	// new URL data
+	SetSitemapper(sitemap.Sitemapper)
 }
 
 type AsyncHttpTracker struct {
@@ -20,9 +26,9 @@ type AsyncHttpTracker struct {
 	*fetch.AsyncWorker
 
 	filter     *bloom.BloomFilter
-	sitemapper sitemap.Sitemapper
 	fetcher    fetch.Fetcher
 	parser     parse.Parser
+	sitemapper sitemap.Sitemapper
 }
 
 func New(fetcher fetch.Fetcher, parser parse.Parser) *AsyncHttpTracker {
@@ -32,35 +38,46 @@ func New(fetcher fetch.Fetcher, parser parse.Parser) *AsyncHttpTracker {
 			Name: "Tracker",
 		},
 
-		filter:     filter,
-		fetcher:    fetcher,
-		parser:     parser,
-		sitemapper: sitemap.New(),
+		filter:  filter,
+		fetcher: fetcher,
+		parser:  parser,
 	}
 	t.AsyncWorker.RunFunc = t.Run
 	return t
 }
 
 func (t *AsyncHttpTracker) Run() error {
-	t.AsyncWorker.SetState(fetch.RUNNING)
+	t.Worker().SetState(fetch.RUNNING)
 	for {
-		t.AsyncWorker.SetState(fetch.WAITING)
+		t.Worker().SetState(fetch.WAITING)
 		res, _ := t.parser.Retrieve()
-		t.AsyncWorker.SetState(fetch.RUNNING)
-		if !t.filter.TestAndAddString(*res.Response) {
-
-			// Adding to sitemapper
-			t.sitemapper.Add(res.Request.String(), *res.Response)
-			url, err := url.ParseRequestURI(*res.Response)
-			if err != nil {
-				return err
-			}
-			fmt.Printf("Tracker: Requesting to fetch %s from Fetcher\n", url)
-			go t.fetcher.Fetch(url)
-		} else {
-			fmt.Printf("Tracker: Url %s is already in bloom filter\n", *res.Response)
-		}
+		t.Worker().SetState(fetch.RUNNING)
+		t.handle(res)
 	}
+}
+
+func (t *AsyncHttpTracker) handle(m *parse.Message) error {
+	if t.filter.TestAndAddString(*m.Response) {
+		return nil
+	}
+
+	fmt.Printf("Tracker: Adding %s to sitemap\n", *m.Response)
+	t.sitemapper.Add(m.Request.String(), *m.Response)
+	url, err := url.ParseRequestURI(*m.Response)
+	if err != nil {
+		return err
+	}
+
+	go t.fetcher.Fetch(url)
+	return nil
+}
+
+// SetSitemapper provides the Tracker with
+// a Sitemapper. The Tracker is responsible for
+// building the providing the Sitemapper with
+// new URL data
+func (t *AsyncHttpTracker) SetSitemapper(s sitemap.Sitemapper) {
+	t.sitemapper = s
 }
 
 func (t *AsyncHttpTracker) Worker() fetch.Worker {

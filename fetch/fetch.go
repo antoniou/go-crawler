@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/goware/urlx"
 )
 
 // Fetcher is an Asynchronous interface
@@ -80,8 +82,10 @@ func (a *AsyncHTTPFetcher) Fetch(url *url.URL) error {
 	if err := a.validate(url); err != nil {
 		return err
 	}
-	fmt.Printf("Fetcher: Adding URL %v to request queue\n", url)
-	*a.requestQueue <- *url
+	normURL, _ := urlx.Normalize(url)
+	fmt.Printf("Fetcher: Adding URL %v to request queue\n", normURL)
+	normURLs, _ := urlx.Parse(normURL)
+	*a.requestQueue <- *normURLs
 	return nil
 }
 
