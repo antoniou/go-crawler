@@ -48,8 +48,7 @@ func New() (c *Client) {
 		app.Commands = append(app.Commands, cli.Command{
 			Name: name,
 			Action: func(c *cli.Context) error {
-				cmd.Run(c.Args())
-				return nil
+				return cmd.Run(c.Args())
 			},
 		})
 	}
