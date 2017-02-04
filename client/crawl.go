@@ -1,13 +1,17 @@
 package client
 
 import (
+	"fmt"
 	"log"
 	"net/url"
+	"os"
 
 	"github.com/antoniou/go-crawler/crawl"
 	"github.com/antoniou/go-crawler/fetch"
 	"github.com/antoniou/go-crawler/parse"
+	"github.com/antoniou/go-crawler/sitemap"
 	"github.com/antoniou/go-crawler/track"
+	"github.com/goware/urlx"
 )
 
 // CrawlCommand is a Command implementation that
@@ -29,14 +33,17 @@ func NewCrawlCommand() *CrawlCommand {
 	}
 }
 
+// Run executes the Crawl command.
+// Requires one or more valid url strings
 func (c *CrawlCommand) Run(args []string) error {
 	if len(args) == 0 {
-		log.Fatalf("The %s command expects at least one argument", c.Name)
+		return fmt.Errorf("The %s command expects at least one argument", c.Name)
 	}
 
-	url, err := url.ParseRequestURI(args[0])
+	normURL, _ := urlx.NormalizeString(args[0])
+	url, err := url.ParseRequestURI(normURL)
+
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
@@ -46,17 +53,23 @@ func (c *CrawlCommand) Run(args []string) error {
 
 	crawler := crawl.NewAsyncHTTPCrawler(
 		fetcher,
+		tracker,
 		[]fetch.Worker{
 			parser.Worker(),
-			tracker.Worker(),
 		},
 	)
 
-	_, err = crawler.Crawl(url)
+	stmp, err := crawler.Crawl(url)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
 
-	return nil
+	f, err := os.Create("result.txt")
+	if err != nil {
+		return err
+	}
+
+	err = sitemap.NewExporter(f).Export(stmp)
+	return err
 }

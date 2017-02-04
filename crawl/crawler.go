@@ -7,6 +7,7 @@ import (
 
 	"github.com/antoniou/go-crawler/fetch"
 	"github.com/antoniou/go-crawler/sitemap"
+	"github.com/antoniou/go-crawler/track"
 )
 
 // A Crawler crawls a domain and returns
@@ -20,11 +21,11 @@ type Crawler interface {
 // NewAsyncHTTPCrawler is a constructor. It takes in a Fetcher
 // that will start the crawl and zero or more workers that will
 // process the response and create a Sitemap
-func NewAsyncHTTPCrawler(f fetch.Fetcher, workers []fetch.Worker) *AsyncHTTPCrawler {
-
+func NewAsyncHTTPCrawler(f fetch.Fetcher, t track.Tracker, workers []fetch.Worker) *AsyncHTTPCrawler {
 	c := &AsyncHTTPCrawler{
 		fetcher: f,
-		workers: append(workers, f.Worker()),
+		tracker: t,
+		workers: append(workers, f.Worker(), t.Worker()),
 	}
 
 	return c
@@ -36,6 +37,7 @@ func NewAsyncHTTPCrawler(f fetch.Fetcher, workers []fetch.Worker) *AsyncHTTPCraw
 // that perform the processing
 type AsyncHTTPCrawler struct {
 	fetcher fetch.Fetcher
+	tracker track.Tracker
 	workers []fetch.Worker
 }
 
@@ -44,17 +46,21 @@ type AsyncHTTPCrawler struct {
 // represenation of the crawled site.
 // It returns an error in case the crawl url is invalid
 func (c *AsyncHTTPCrawler) Crawl(url *url.URL) (sitemap.Sitemapper, error) {
+	stmp := sitemap.New()
+	c.tracker.SetSitemapper(stmp)
+
 	for _, worker := range c.workers {
 		fmt.Printf("Starting worker of type %v\n", worker.Type())
 		go worker.Run()
 	}
+
 	err := c.fetcher.Fetch(url)
 	if err != nil {
 		return nil, err
 	}
 	c.join()
 
-	return nil, nil
+	return stmp, nil
 }
 
 // Wait for all workers to be in state WAITING. This
