@@ -5,9 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/antoniou/go-crawler/fetch"
 	"github.com/antoniou/go-crawler/sitemap"
-	"github.com/antoniou/go-crawler/track"
 )
 
 // A Crawler crawls a domain and returns
@@ -21,7 +19,7 @@ type Crawler interface {
 // NewAsyncHTTPCrawler is a constructor. It takes in a Fetcher
 // that will start the crawl and zero or more workers that will
 // process the response and create a Sitemap
-func NewAsyncHTTPCrawler(f fetch.Fetcher, t track.Tracker, workers []fetch.Worker) *AsyncHTTPCrawler {
+func NewAsyncHTTPCrawler(f Fetcher, t Tracker, workers []Worker) *AsyncHTTPCrawler {
 	c := &AsyncHTTPCrawler{
 		fetcher: f,
 		tracker: t,
@@ -36,9 +34,9 @@ func NewAsyncHTTPCrawler(f fetch.Fetcher, t track.Tracker, workers []fetch.Worke
 // initiates the crawling and zero or more workers
 // that perform the processing
 type AsyncHTTPCrawler struct {
-	fetcher fetch.Fetcher
-	tracker track.Tracker
-	workers []fetch.Worker
+	fetcher Fetcher
+	tracker Tracker
+	workers []Worker
 }
 
 // Crawl is the main entrypoint to crawling a domain (url).
@@ -68,13 +66,13 @@ func (c *AsyncHTTPCrawler) Crawl(url *url.URL) (sitemap.Sitemapper, error) {
 func (c *AsyncHTTPCrawler) join() {
 	for {
 		time.Sleep(1 * time.Second)
-		state := fetch.WAITING
+		state := WAITING
 
 		for _, worker := range c.workers {
 			state += worker.State()
 		}
 
-		if state == fetch.WAITING {
+		if state == WAITING {
 			return
 		}
 

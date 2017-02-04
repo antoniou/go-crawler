@@ -7,10 +7,7 @@ import (
 	"os"
 
 	"github.com/antoniou/go-crawler/crawl"
-	"github.com/antoniou/go-crawler/fetch"
-	"github.com/antoniou/go-crawler/parse"
 	"github.com/antoniou/go-crawler/sitemap"
-	"github.com/antoniou/go-crawler/track"
 	"github.com/goware/urlx"
 )
 
@@ -47,14 +44,14 @@ func (c *CrawlCommand) Run(args []string) error {
 		return err
 	}
 
-	fetcher := fetch.NewAsyncHTTPFetcher()
-	parser := parse.NewAsyncHTTPParser(url, fetcher)
-	tracker := track.New(fetcher, parser)
+	fetcher := crawl.NewAsyncHTTPFetcher()
+	parser := crawl.NewAsyncHTTPParser(url, fetcher)
+	tracker := crawl.New(fetcher, parser)
 
 	crawler := crawl.NewAsyncHTTPCrawler(
 		fetcher,
 		tracker,
-		[]fetch.Worker{
+		[]crawl.Worker{
 			parser.Worker(),
 		},
 	)

@@ -1,4 +1,4 @@
-package fetch
+package crawl
 
 import (
 	"fmt"
@@ -17,18 +17,18 @@ type Fetcher interface {
 	// ResponseChannel is a Getter returning
 	// the Fetcher's Channel  that consumers
 	// should be receiving results from
-	ResponseChannel() (responseQueue *ResponseQueue)
+	ResponseChannel() (responseQueue *FetchResponseQueue)
 
 	// Retrieve Worker that manages Fetcher Service
 	Worker() Worker
 }
 
-// Message is a struct used to pass results of a Fetch
+// FetchMessage is a struct used to pass results of a Fetch
 // request back to the requester. It includes
 // Request: The original request (for tracking)
 // Response
 // Error in case request could not finish successfully
-type Message struct {
+type FetchMessage struct {
 	Request  *url.URL
 	Response *http.Response
 	Error    error
@@ -38,9 +38,9 @@ type Message struct {
 // requests to the fetcher
 type RequestQueue chan url.URL
 
-// ResponseQueue queue is used for outgoing
+// FetchResponseQueue queue is used for outgoing
 // responses from the Fetcher
-type ResponseQueue chan *Message
+type FetchResponseQueue chan *FetchMessage
 
 // AsyncHTTPFetcher implements Fetcher
 type AsyncHTTPFetcher struct {
@@ -48,7 +48,7 @@ type AsyncHTTPFetcher struct {
 	*AsyncWorker
 
 	requestQueue  *RequestQueue
-	responseQueue *ResponseQueue
+	responseQueue *FetchResponseQueue
 
 	client HTPPClient
 }
@@ -59,7 +59,7 @@ type AsyncHTTPFetcher struct {
 // Run method
 func NewAsyncHTTPFetcher() *AsyncHTTPFetcher {
 	reqQueue := make(RequestQueue)
-	resQueue := make(ResponseQueue)
+	resQueue := make(FetchResponseQueue)
 	a := &AsyncHTTPFetcher{
 		AsyncWorker: NewAsyncWorker("Fetcher"),
 
@@ -91,7 +91,7 @@ func (a *AsyncHTTPFetcher) Fetch(url *url.URL) error {
 
 // ResponseChannel is a Getter returning the Fetcher's Channel  that consumers
 // should be receiving results from
-func (a *AsyncHTTPFetcher) ResponseChannel() (responseQueue *ResponseQueue) {
+func (a *AsyncHTTPFetcher) ResponseChannel() (responseQueue *FetchResponseQueue) {
 	return a.responseQueue
 }
 
@@ -113,8 +113,8 @@ func (a *AsyncHTTPFetcher) Run() error {
 		// A request is received
 		case req := <-*a.requestQueue:
 			a.AsyncWorker.SetState(RUNNING)
-			res, err := a.get(req)
-			*a.responseQueue <- &Message{
+			res, err := a.client.Get(req.String())
+			*a.responseQueue <- &FetchMessage{
 				Request:  &req,
 				Response: res,
 				Error:    err,
@@ -127,11 +127,6 @@ func (a *AsyncHTTPFetcher) Run() error {
 		default:
 		}
 	}
-}
-
-// FIXME - This might not be needed
-func (a *AsyncHTTPFetcher) get(url url.URL) (Response *http.Response, err error) {
-	return a.client.Get(url.String())
 }
 
 func (a *AsyncHTTPFetcher) validate(uri *url.URL) error {

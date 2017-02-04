@@ -1,4 +1,4 @@
-package parse
+package crawl
 
 import (
 	"fmt"
@@ -6,12 +6,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/antoniou/go-crawler/fetch"
 	"github.com/goware/urlx"
 	"golang.org/x/net/html"
 )
 
-type ResponseQueue chan *Message
+type ParserResponseQueue chan *ParseMessage
 
 // Parser is an Asynchronous interface
 type Parser interface {
@@ -20,43 +19,43 @@ type Parser interface {
 
 	// Retrieve provides results back from the Parser
 	// in the form of Urls
-	Retrieve() (m *Message, err error)
+	Retrieve() (m *ParseMessage, err error)
 
 	// Retrieve Worker
-	Worker() fetch.Worker
+	Worker() Worker
 }
 
 type AsyncHTTPParser struct {
 	//Fetcher is an Asynchronous Worker
-	*fetch.AsyncWorker
+	*AsyncWorker
 
-	fetcher       fetch.Fetcher
-	ResponseQueue *ResponseQueue
-	seed          *url.URL
+	fetcher             Fetcher
+	ParserResponseQueue *ParserResponseQueue
+	seed                *url.URL
 }
 
-type Message struct {
+type ParseMessage struct {
 	Request  *url.URL
 	Response *string
 }
 
-func NewAsyncHTTPParser(seedURL *url.URL, fetcher fetch.Fetcher) *AsyncHTTPParser {
-	resQueue := make(ResponseQueue)
+func NewAsyncHTTPParser(seedURL *url.URL, fetcher Fetcher) *AsyncHTTPParser {
+	resQueue := make(ParserResponseQueue)
 	a := &AsyncHTTPParser{
-		AsyncWorker: fetch.NewAsyncWorker("Parser"),
+		AsyncWorker: NewAsyncWorker("Parser"),
 
-		fetcher:       fetcher,
-		ResponseQueue: &resQueue,
-		seed:          seedURL,
+		fetcher:             fetcher,
+		ParserResponseQueue: &resQueue,
+		seed:                seedURL,
 	}
 	a.AsyncWorker.RunFunc = a.Run
 	return a
 }
 
 func (p *AsyncHTTPParser) Run() error {
-	p.AsyncWorker.SetState(fetch.RUNNING)
+	p.AsyncWorker.SetState(RUNNING)
 	for {
-		p.AsyncWorker.SetState(fetch.WAITING)
+		p.AsyncWorker.SetState(WAITING)
 		select {
 		case res := <-*p.fetcher.ResponseChannel():
 			if res.Error != nil {
@@ -66,19 +65,19 @@ func (p *AsyncHTTPParser) Run() error {
 				log.Printf("Could not get %s: %v", res.Request.String(), res.Error)
 				continue
 			}
-			p.AsyncWorker.SetState(fetch.RUNNING)
+			p.AsyncWorker.SetState(RUNNING)
 			p.extractLinks(res)
 
 			// A quit has been received, Stop has been invoked
 		case <-p.AsyncWorker.Quit:
-			p.Worker().SetState(fetch.STOPPED)
+			p.Worker().SetState(STOPPED)
 			return nil
 		}
 
 	}
 }
 
-func (p *AsyncHTTPParser) extractLinks(res *fetch.Message) error {
+func (p *AsyncHTTPParser) extractLinks(res *FetchMessage) error {
 	z := html.NewTokenizer(res.Response.Body)
 	done := false
 	for {
@@ -118,7 +117,7 @@ func (p *AsyncHTTPParser) extractLinks(res *fetch.Message) error {
 			// fmt.Printf("Parser %s: Has Proto %v, In Seed domain: %v\n", url, hasProto, inSeedDomain)
 			if hasProto && inSeedDomain {
 				// fmt.Printf("Parser: Sending to Tracker %s\n", normURL)
-				*p.ResponseQueue <- &Message{
+				*p.ParserResponseQueue <- &ParseMessage{
 					Request:  res.Request,
 					Response: &normURL,
 				}
@@ -129,14 +128,14 @@ func (p *AsyncHTTPParser) extractLinks(res *fetch.Message) error {
 	return nil
 }
 
-func (p *AsyncHTTPParser) Retrieve() (m *Message, err error) {
-	m = <-*p.ResponseQueue
+func (p *AsyncHTTPParser) Retrieve() (m *ParseMessage, err error) {
+	m = <-*p.ParserResponseQueue
 	// fmt.Printf("Parser: %s -> %s\n", m.Request.String(), *m.Response)
 	return m, nil
 
 }
 
-func (a *AsyncHTTPParser) Worker() fetch.Worker {
+func (a *AsyncHTTPParser) Worker() Worker {
 	return a.AsyncWorker
 }
 

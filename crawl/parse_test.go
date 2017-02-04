@@ -1,10 +1,9 @@
-package parse
+package crawl
 
 import (
 	"net/url"
 	"testing"
 
-	"github.com/antoniou/go-crawler/fetch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -13,21 +12,21 @@ import (
 // Mock the fetcher that is going to be passed to the Parser tests
 type mockFetcher struct {
 	mock.Mock
-	fetch.Fetcher
+	Fetcher
 
-	responseQueue *fetch.ResponseQueue
+	responseQueue *ResponseQueue
 }
 
 func (f *mockFetcher) Run(url *url.URL) error {
 	return nil
 }
 
-func (f *mockFetcher) ResponseChannel() (Response *fetch.ResponseQueue) {
+func (f *mockFetcher) ResponseChannel() (Response *ResponseQueue) {
 	return f.responseQueue
 }
 
-func (f *mockFetcher) Worker() fetch.Worker {
-	return &fetch.AsyncWorker{}
+func (f *mockFetcher) Worker() Worker {
+	return &AsyncWorker{}
 }
 
 func (f *mockFetcher) Fetch(url *url.URL) error {
@@ -41,10 +40,10 @@ type ParseTestSuite struct {
 	seedURL *url.URL
 }
 
-func NewTestParser(seedURL *url.URL, fetcher fetch.Fetcher) *AsyncHTTPParser {
+func NewTestParser(seedURL *url.URL, fetcher Fetcher) *AsyncHTTPParser {
 	resQueue := make(ResponseQueue)
 	a := &AsyncHTTPParser{
-		AsyncWorker: fetch.NewAsyncWorker("Parser"),
+		AsyncWorker: NewAsyncWorker("Parser"),
 
 		fetcher:       fetcher,
 		ResponseQueue: &resQueue,
@@ -55,8 +54,8 @@ func NewTestParser(seedURL *url.URL, fetcher fetch.Fetcher) *AsyncHTTPParser {
 	return a
 }
 
-func NewMockFetcher() fetch.Fetcher {
-	fetcherResQueue := make(fetch.ResponseQueue)
+func NewMockFetcher() Fetcher {
+	fetcherResQueue := make(ResponseQueue)
 	f := &mockFetcher{
 		responseQueue: &fetcherResQueue,
 	}
@@ -77,10 +76,10 @@ func (suite *ParseTestSuite) TestFetchValidAndInvalidResponse() {
 func (suite *ParseTestSuite) TestStopParser() {
 	f := NewMockFetcher()
 	p := NewTestParser(suite.seedURL, f)
-	assert.Equal(suite.T(), fetch.WAITING, p.Worker().State())
+	assert.Equal(suite.T(), WAITING, p.Worker().State())
 
 	p.Stop()
-	assert.Equal(suite.T(), fetch.STOPPED, p.Worker().State())
+	assert.Equal(suite.T(), STOPPED, p.Worker().State())
 }
 
 func (suite *ParseTestSuite) TestNewAsyncHTTPParserConstructor() {

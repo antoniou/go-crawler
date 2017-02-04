@@ -1,18 +1,16 @@
-package track
+package crawl
 
 import (
 	"fmt"
 	"net/url"
 
-	"github.com/antoniou/go-crawler/fetch"
-	"github.com/antoniou/go-crawler/parse"
 	"github.com/antoniou/go-crawler/sitemap"
 	"github.com/willf/bloom"
 )
 
 type Tracker interface {
 	// Retrieve Worker
-	Worker() fetch.Worker
+	Worker() Worker
 
 	// SetSitemapper provides the Tracker with
 	// a Sitemapper. The Tracker is responsible for
@@ -23,18 +21,18 @@ type Tracker interface {
 
 type AsyncHttpTracker struct {
 	//Tracker is an Asynchronous Worker
-	*fetch.AsyncWorker
+	*AsyncWorker
 
 	filter     *bloom.BloomFilter
-	fetcher    fetch.Fetcher
-	parser     parse.Parser
+	fetcher    Fetcher
+	parser     Parser
 	sitemapper sitemap.Sitemapper
 }
 
-func New(fetcher fetch.Fetcher, parser parse.Parser) *AsyncHttpTracker {
+func New(fetcher Fetcher, parser Parser) *AsyncHttpTracker {
 	filter := bloom.New(20000, 5)
 	t := &AsyncHttpTracker{
-		AsyncWorker: &fetch.AsyncWorker{
+		AsyncWorker: &AsyncWorker{
 			Name: "Tracker",
 		},
 
@@ -47,16 +45,16 @@ func New(fetcher fetch.Fetcher, parser parse.Parser) *AsyncHttpTracker {
 }
 
 func (t *AsyncHttpTracker) Run() error {
-	t.Worker().SetState(fetch.RUNNING)
+	t.Worker().SetState(RUNNING)
 	for {
-		t.Worker().SetState(fetch.WAITING)
+		t.Worker().SetState(WAITING)
 		res, _ := t.parser.Retrieve()
-		t.Worker().SetState(fetch.RUNNING)
+		t.Worker().SetState(RUNNING)
 		t.handle(res)
 	}
 }
 
-func (t *AsyncHttpTracker) handle(m *parse.Message) error {
+func (t *AsyncHttpTracker) handle(m *ParseMessage) error {
 	if t.filter.TestAndAddString(*m.Response) {
 		return nil
 	}
@@ -80,6 +78,6 @@ func (t *AsyncHttpTracker) SetSitemapper(s sitemap.Sitemapper) {
 	t.sitemapper = s
 }
 
-func (t *AsyncHttpTracker) Worker() fetch.Worker {
+func (t *AsyncHttpTracker) Worker() Worker {
 	return t.AsyncWorker
 }
