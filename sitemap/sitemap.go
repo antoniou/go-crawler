@@ -6,9 +6,11 @@ import (
 	"github.com/twmb/algoimpl/go/graph"
 )
 
+// A Sitemapper holds the represenation of
+// a sitemap. Links between URLs are created
+// with Add
 type Sitemapper interface {
-	// Add creates a representation of the
-	// quad to the Sitemapper
+	// Add creates a representation of a link
 	Add(from string, to string) error
 
 	//SeedURL returns the seed URL of the Sitemap
@@ -18,6 +20,8 @@ type Sitemapper interface {
 	LinksFrom(URL string) *[]string
 }
 
+// GraphSitemap is a Directed Graph-based
+// implementation of Sitemapper
 type GraphSitemap struct {
 	graph    *graph.Graph
 	nodemap  map[string]*graph.Node
@@ -25,6 +29,10 @@ type GraphSitemap struct {
 	root     *graph.Node
 }
 
+// NewGraphSitemap constructs a GraphSitemap
+// It needs to maintain a nodemap:
+// url -> graph.Node(url), e.g,
+// "http://example.com" -> graph.Node("http://example.com" )
 func NewGraphSitemap() *GraphSitemap {
 	nodemap := make(map[string]*graph.Node)
 	return &GraphSitemap{
@@ -34,24 +42,9 @@ func NewGraphSitemap() *GraphSitemap {
 	}
 }
 
-func (s *GraphSitemap) makeRoot(root *graph.Node) {
-	fmt.Printf("Adding ROOT node %s\n", (*root.Value).(string))
-	s.hasNodes = true
-	s.root = root
-}
-
-func (s *GraphSitemap) addNode(nodeURL string) (*graph.Node, error) {
-	n, ok := s.nodemap[nodeURL]
-	if ok {
-		return n, fmt.Errorf("URL Node %s already exists", nodeURL)
-	}
-
-	node := s.graph.MakeNode()
-	*node.Value = nodeURL
-	s.nodemap[nodeURL] = &node
-	return &node, nil
-}
-
+// Add creates a representation of a link
+// GraphSitemap creates a Graph Node for the from and to URLs
+// It also creates an edge for the link between them
 func (s *GraphSitemap) Add(from string, to string) error {
 	nodeFrom, _ := s.addNode(from)
 	if !s.hasNodes {
@@ -79,4 +72,22 @@ func (s *GraphSitemap) LinksFrom(url string) *[]string {
 		links = append(links, val)
 	}
 	return &links
+}
+
+func (s *GraphSitemap) makeRoot(root *graph.Node) {
+	fmt.Printf("Adding ROOT node %s\n", (*root.Value).(string))
+	s.hasNodes = true
+	s.root = root
+}
+
+func (s *GraphSitemap) addNode(nodeURL string) (*graph.Node, error) {
+	n, ok := s.nodemap[nodeURL]
+	if ok {
+		return n, fmt.Errorf("URL Node %s already exists", nodeURL)
+	}
+
+	node := s.graph.MakeNode()
+	*node.Value = nodeURL
+	s.nodemap[nodeURL] = &node
+	return &node, nil
 }
