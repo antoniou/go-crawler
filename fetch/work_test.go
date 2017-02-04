@@ -30,7 +30,7 @@ func (e *Encapsulator) mockedMethodReturnsError() error {
 
 func (e *Encapsulator) mockedMethodStopChannel() error {
 	select {
-	case <-e.AsyncWorker.quit:
+	case <-e.AsyncWorker.Quit:
 		fmt.Println("HERE")
 		e.Called()
 		return nil
