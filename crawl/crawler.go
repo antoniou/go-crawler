@@ -20,13 +20,11 @@ type Crawler interface {
 // that will start the crawl and zero or more workers that will
 // process the response and create a Sitemap
 func NewAsyncHTTPCrawler(f Fetcher, t Tracker, workers []Worker) *AsyncHTTPCrawler {
-	c := &AsyncHTTPCrawler{
+	return &AsyncHTTPCrawler{
 		fetcher: f,
 		tracker: t,
 		workers: append(workers, f.Worker(), t.Worker()),
 	}
-
-	return c
 }
 
 // AsyncHTTPCrawler is an implementation of the
@@ -44,7 +42,9 @@ type AsyncHTTPCrawler struct {
 // represenation of the crawled site.
 // It returns an error in case the crawl url is invalid
 func (c *AsyncHTTPCrawler) Crawl(url *url.URL) (sitemap.Sitemapper, error) {
-	stmp := sitemap.New()
+	// Create an empty sitemap
+	stmp := sitemap.NewGraphSitemap()
+	// Pass it to the tracker
 	c.tracker.SetSitemapper(stmp)
 
 	for _, worker := range c.workers {
