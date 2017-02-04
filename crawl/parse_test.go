@@ -14,14 +14,14 @@ type mockFetcher struct {
 	mock.Mock
 	Fetcher
 
-	responseQueue *ResponseQueue
+	responseQueue *FetchResponseQueue
 }
 
 func (f *mockFetcher) Run(url *url.URL) error {
 	return nil
 }
 
-func (f *mockFetcher) ResponseChannel() (Response *ResponseQueue) {
+func (f *mockFetcher) ResponseChannel() (Response *FetchResponseQueue) {
 	return f.responseQueue
 }
 
@@ -41,13 +41,13 @@ type ParseTestSuite struct {
 }
 
 func NewTestParser(seedURL *url.URL, fetcher Fetcher) *AsyncHTTPParser {
-	resQueue := make(ResponseQueue)
+	resQueue := make(ParserResponseQueue)
 	a := &AsyncHTTPParser{
 		AsyncWorker: NewAsyncWorker("Parser"),
 
-		fetcher:       fetcher,
-		ResponseQueue: &resQueue,
-		seed:          seedURL,
+		fetcher:             fetcher,
+		ParserResponseQueue: &resQueue,
+		seed:                seedURL,
 	}
 	a.AsyncWorker.RunFunc = a.Run
 	go a.Worker().Run()
@@ -55,7 +55,7 @@ func NewTestParser(seedURL *url.URL, fetcher Fetcher) *AsyncHTTPParser {
 }
 
 func NewMockFetcher() Fetcher {
-	fetcherResQueue := make(ResponseQueue)
+	fetcherResQueue := make(FetchResponseQueue)
 	f := &mockFetcher{
 		responseQueue: &fetcherResQueue,
 	}

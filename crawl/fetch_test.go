@@ -37,9 +37,9 @@ type FetchTestSuite struct {
 	suite.Suite
 }
 
-func NewMockFetcher() *AsyncHTTPFetcher {
+func NewTestFetcher() *AsyncHTTPFetcher {
 	reqQueue := make(RequestQueue)
-	resQueue := make(ResponseQueue)
+	resQueue := make(FetchResponseQueue)
 	a := &AsyncHTTPFetcher{
 		AsyncWorker: NewAsyncWorker("MockFetcher"),
 
@@ -53,7 +53,7 @@ func NewMockFetcher() *AsyncHTTPFetcher {
 }
 
 func (suite *FetchTestSuite) TestFetchValidAndInvalidResponse() {
-	f := NewMockFetcher()
+	f := NewTestFetcher()
 
 	// Valid Request
 	uri, _ := url.ParseRequestURI("https://validurl.com")
@@ -86,7 +86,7 @@ func (suite *FetchTestSuite) TestFetchValidAndInvalidResponse() {
 }
 
 func (suite *FetchTestSuite) TestStopFetcher() {
-	f := NewMockFetcher()
+	f := NewTestFetcher()
 	assert.Equal(suite.T(), WAITING, f.Worker().State())
 	f.Stop()
 	assert.Equal(suite.T(), STOPPED, f.Worker().State())
