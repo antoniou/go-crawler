@@ -6,7 +6,6 @@ import (
 	"net/url"
 
 	"github.com/antoniou/go-crawler/util"
-	"github.com/goware/urlx"
 )
 
 // Fetcher is an Asynchronous Worker interface
@@ -83,13 +82,14 @@ func (a *AsyncHTTPFetcher) Fetch(url *url.URL) error {
 	if a.AsyncWorker.State() == STOPPED {
 		return fmt.Errorf("%s is in state stopped", a.AsyncWorker.Type())
 	}
+
 	if err := a.validate(url); err != nil {
 		return err
 	}
-	normURL, _ := urlx.Normalize(url)
+
+	normURL, _ := util.NormalizeURL(url)
 	util.Printf("Fetcher: Adding URL %v to request queue\n", normURL)
-	normURLs, _ := urlx.Parse(normURL)
-	*a.requestQueue <- *normURLs
+	*a.requestQueue <- *normURL
 	return nil
 }
 

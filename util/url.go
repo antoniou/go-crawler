@@ -13,7 +13,10 @@ func NormalizeURL(orig *url.URL) (*url.URL, error) {
 	if err != nil {
 		return nil, err
 	}
-	return url.ParseRequestURI(normURL)
+
+	u, err := url.ParseRequestURI(normURL)
+	u.RawQuery = ""
+	return u, err
 }
 
 // NormalizeStringURL normalizes a String URL to its canonical form

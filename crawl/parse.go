@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/goware/urlx"
+	"github.com/antoniou/go-crawler/util"
 	"golang.org/x/net/html"
 )
 
@@ -36,7 +36,7 @@ type AsyncHTTPParser struct {
 
 type ParseMessage struct {
 	Request  *url.URL
-	Response *string
+	Response *url.URL
 }
 
 func NewAsyncHTTPParser(seedURL *url.URL, fetcher Fetcher) *AsyncHTTPParser {
@@ -116,13 +116,18 @@ func (p *AsyncHTTPParser) extractLinks(res *FetchMessage) error {
 			if isRelative {
 				url = fmt.Sprintf("%s://%s%s", p.seed.Scheme, p.seed.Host, url)
 			}
-			normURL := p.normalise(url)
-			hasProto := strings.Index(normURL, "http") == 0
-			inSeedDomain := strings.Index(normURL, p.seed.String()) == 0
+			normURL, err := util.NormalizeStringURL(url)
+			if err != nil {
+				util.Printf("Parser: Error while normalizing %v: %v", url, err)
+				continue
+			}
+			hasProto := strings.Index(normURL.Scheme, "http") == 0
+			inSeedDomain := strings.Index(normURL.String(), p.seed.String()) == 0
 			if hasProto && inSeedDomain {
+				util.Printf("Parser: Passing url %v to Tracker", normURL)
 				*p.ParserResponseQueue <- &ParseMessage{
 					Request:  res.Request,
-					Response: &normURL,
+					Response: normURL,
 				}
 			}
 		}
@@ -139,21 +144,6 @@ func (p *AsyncHTTPParser) Retrieve() (m *ParseMessage, err error) {
 
 func (a *AsyncHTTPParser) Worker() Worker {
 	return a.AsyncWorker
-}
-
-// Helper function to bring Url to its normalised form
-// by removing querystrings and reconstructing absolute
-// path URLs
-func (p *AsyncHTTPParser) normalise(path string) string {
-	normURL := path
-	parsedURL, err := url.ParseRequestURI(normURL)
-	if err != nil {
-		return ""
-	}
-
-	normURL = strings.TrimSuffix(path, "?"+parsedURL.RawQuery)
-	normalized, _ := urlx.NormalizeString(normURL)
-	return normalized
 }
 
 // Helper function to pull the href attribute from a Token
