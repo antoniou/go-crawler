@@ -21,7 +21,11 @@ type FileExporter struct {
 // Export exports Sitemapper s to FileExporter.writer
 // Returns nil or error on failure
 func (f *FileExporter) Export(s Sitemapper) error {
-	err := f.exportRecursive(s, s.SeedURL(), "")
+	seedURL, err := s.SeedURL()
+	if err != nil {
+		return err
+	}
+	err = f.exportRecursive(s, seedURL, "")
 	if err != nil {
 		return err
 	}

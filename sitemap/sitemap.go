@@ -15,7 +15,8 @@ type Sitemapper interface {
 	Add(from string, to string) error
 
 	//SeedURL returns the seed URL of the Sitemap
-	SeedURL() string
+	// or error in case there is none
+	SeedURL() (string, error)
 
 	//LinksFrom returns the links from a specific node
 	LinksFrom(URL string) *[]string
@@ -58,8 +59,11 @@ func (s *GraphSitemap) Add(from string, to string) error {
 }
 
 //SeedURL Returns the seed URL (Root) of the Sitemap
-func (s *GraphSitemap) SeedURL() string {
-	return (*s.root.Value).(string)
+func (s *GraphSitemap) SeedURL() (string, error) {
+	if s.root == nil {
+		return "", fmt.Errorf("Sitemap could not be exported")
+	}
+	return (*s.root.Value).(string), nil
 }
 
 //LinksFrom returns the links from a specific node

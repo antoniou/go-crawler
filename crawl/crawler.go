@@ -21,10 +21,12 @@ type Crawler interface {
 // that will start the crawl and zero or more workers that will
 // process the response and create a Sitemap
 func NewAsyncHTTPCrawler(seedURL *url.URL) *AsyncHTTPCrawler {
+
 	fetcher := NewAsyncHTTPFetcher()
 	parser := NewAsyncHTTPParser(seedURL, fetcher)
 	tracker := NewAsyncHttpTracker(fetcher, parser)
 	return &AsyncHTTPCrawler{
+		seedURL: seedURL,
 		fetcher: fetcher,
 		tracker: tracker,
 		workers: []Worker{
@@ -43,13 +45,14 @@ type AsyncHTTPCrawler struct {
 	fetcher Fetcher
 	tracker Tracker
 	workers []Worker
+	seedURL *url.URL
 }
 
 // Crawl is the main entrypoint to crawling a domain (url).
 // Crawl returns a Sitemapper that can later be used to create a
 // represenation of the crawled site.
 // It returns an error in case the crawl url is invalid
-func (c *AsyncHTTPCrawler) Crawl(url *url.URL) (sitemap.Sitemapper, error) {
+func (c *AsyncHTTPCrawler) Crawl() (sitemap.Sitemapper, error) {
 	// Create an empty sitemap
 	stmp := sitemap.NewGraphSitemap()
 	// Pass it to the tracker
@@ -60,21 +63,20 @@ func (c *AsyncHTTPCrawler) Crawl(url *url.URL) (sitemap.Sitemapper, error) {
 		go worker.Run()
 	}
 
-	fmt.Printf("Starting crawling of %v\n", url)
-	err := c.fetcher.Fetch(url)
+	fmt.Printf("Starting crawling of %v\n", c.seedURL)
+	err := c.fetcher.Fetch(c.seedURL)
 	if err != nil {
 		return nil, err
 	}
-	c.join()
 
-	return stmp, nil
+	return stmp, c.join()
 }
 
 // Wait for all workers to be in state WAITING. This
 // will indicate that work is done
-func (c *AsyncHTTPCrawler) join() {
+func (c *AsyncHTTPCrawler) join() error {
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 		state := WAITING
 
 		for _, worker := range c.workers {
@@ -82,7 +84,7 @@ func (c *AsyncHTTPCrawler) join() {
 		}
 
 		if state == WAITING {
-			return
+			return nil
 		}
 
 	}

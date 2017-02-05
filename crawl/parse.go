@@ -60,6 +60,9 @@ func (p *AsyncHTTPParser) Run() error {
 		select {
 		case res := <-*p.fetcher.ResponseChannel():
 			if err := p.handleResponse(res); err != nil {
+				if p.seed.String() == res.Request.String() {
+					return err
+				}
 				continue
 			}
 		case <-p.AsyncWorker.Quit:

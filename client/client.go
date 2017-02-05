@@ -65,7 +65,7 @@ func (client *Client) crawl(c *cli.Context) error {
 	}
 
 	crawler := crawl.NewAsyncHTTPCrawler(seedURL)
-	stmp, err := crawler.Crawl(seedURL)
+	stmp, err := crawler.Crawl()
 	if err != nil {
 		return err
 	}
