@@ -34,15 +34,40 @@ Certain assumptions about the requirements should be made:
 1. The crawler does crawl subdomains of the specific domain provided
 1. If a specific path within a domain is given
 
+### Asymptotic Complexity:
+#### Space Complexity :
+The solution makes use of bloom filters, graphs and hashmaps:
+Given N crawled pages and M links between the pages, their space complexity is:
+1. Bloom Filters used for pages: O(1) - fixed Space
+2. HashMap used for pages: O(N)
+3. Graph Nodes used for pages: O(N)
+3. Graph Edges used for links: O(M)
 
-Concerns/Improvements:
+Therefore, the asymptotic space complexity is linear to the maximum of pages and links between them:
+```
+O(max(m, n))
+```
+#### Time Complexity:
+The solution goes through the following phases:
+1. Crawling the site, and making sure that the same page is not crawled twice
+2. Creating an in-memory representation of the site-map
+3. Exporting the sitemap to a file representation
+
+Given N crawled pages and M links between the pages, the time complexity of each step should be:
+1. Crawling: O(N)
+1. In-memory representation: O(max(N, M))
+1. Exporting sitemap: O(max(N, M))
+
+The overall time complexity should then be:
+```
+O(max(N, M))
+```
+
+
+
+## Future Work/Improvements:
 1. Parallelize implementation even further
 1. Bloom Filter False-positive Rate:
 1. URLs that time-out
 1. Use robots.txt and existing sitemap
 1. At the moment, the crawler limits itself within a single scheme (e.g, http). For example, if  http://www.example.com is given as input, the crawler will not follow links to https://www.example.com/about. This is an improvement that the crawler needs
-
-
-### Asymptotic Complexity:
-Space: O(n)
-Time: O(n)
