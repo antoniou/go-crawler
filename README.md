@@ -4,6 +4,14 @@ A Web Crawler written in Go
 
 The crawler is limited to one domain - Given domain http://www.example.com it will crawl all pages within the domain, but will not follow external links.
 
+The crawler will also provide link information between the pages of the crawled domain. For example, given a link from http://example.com/ to http://example.com/about/ and another link from http://example.com/about/ to http://example.com/ the output will be:
+
+```text
+http://example.com/
+  http://example.com/about/
+    http://example.com/
+```
+
 ## Installation
 To install go-crawler, you'll need to have Golang installed and environment variable [$GOPATH appropriately set](https://golang.org/doc/install).
 ```bash
@@ -17,7 +25,7 @@ $ go-crawler -o tom_sitemap.out http://tomblomfield.com
 
 To see what happens during crawling, enable verbose mode:
 ```bash
-$ go-crawler -v -o tom_sitemap.out http://tomblomfield.com
+$ go-crawler --verbose -o tom_sitemap.out http://tomblomfield.com
 ```
 
 ## Assumptions
