@@ -55,6 +55,7 @@ func (client *Client) Crawl(c *cli.Context) error {
 	args := c.Args()
 
 	if len(args) == 0 {
+		client.app.Commands[0].Run(c)
 		return fmt.Errorf("Expects at least one argument")
 	}
 
