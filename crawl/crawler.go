@@ -20,11 +20,18 @@ type Crawler interface {
 // NewAsyncHTTPCrawler is a constructor. It takes in a Fetcher
 // that will start the crawl and zero or more workers that will
 // process the response and create a Sitemap
-func NewAsyncHTTPCrawler(f Fetcher, t Tracker, workers []Worker) *AsyncHTTPCrawler {
+func NewAsyncHTTPCrawler(seedURL *url.URL) *AsyncHTTPCrawler {
+	fetcher := NewAsyncHTTPFetcher()
+	parser := NewAsyncHTTPParser(seedURL, fetcher)
+	tracker := NewAsyncHttpTracker(fetcher, parser)
 	return &AsyncHTTPCrawler{
-		fetcher: f,
-		tracker: t,
-		workers: append(workers, f.Worker(), t.Worker()),
+		fetcher: fetcher,
+		tracker: tracker,
+		workers: []Worker{
+			parser.Worker(),
+			fetcher.Worker(),
+			tracker.Worker(),
+		},
 	}
 }
 
@@ -49,7 +56,6 @@ func (c *AsyncHTTPCrawler) Crawl(url *url.URL) (sitemap.Sitemapper, error) {
 	c.tracker.SetSitemapper(stmp)
 
 	for _, worker := range c.workers {
-		// util.Logger(verbose)
 		util.Printf("Starting worker of type %v\n", worker.Type())
 		go worker.Run()
 	}

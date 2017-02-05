@@ -9,7 +9,10 @@ import (
 	"github.com/goware/urlx"
 )
 
-// Fetcher is an Asynchronous interface
+// Fetcher is an Asynchronous Worker interface
+// that is responsible for Fetching URLs and
+// exposing a ResponseChannel where the results
+// of type FetchMessage are passed to the consumers
 type Fetcher interface {
 	// Fetch provides work to the Fetcher, in the
 	// form of a URL to process

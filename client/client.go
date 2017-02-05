@@ -2,14 +2,11 @@ package client
 
 import (
 	"fmt"
-	"log"
-	"net/url"
 	"os"
 
 	"github.com/antoniou/go-crawler/crawl"
 	"github.com/antoniou/go-crawler/sitemap"
 	"github.com/antoniou/go-crawler/util"
-	"github.com/goware/urlx"
 	"github.com/urfave/cli"
 )
 
@@ -18,10 +15,12 @@ type Client struct {
 	app *cli.App
 }
 
+// Run starts the command line client
 func (client *Client) Run(arguments []string) error {
 	return client.app.Run(arguments)
 }
 
+// New is a Client constructor
 func New() (client *Client) {
 	client = new(Client)
 	app := cli.NewApp()
@@ -42,50 +41,41 @@ func New() (client *Client) {
 	}
 
 	app.Action = func(c *cli.Context) error {
-		return client.Crawl(c)
+		// Logger with verbose logging enabled/disabled
+		_ = util.Logger(c.Bool("verbose"))
+		if len(c.Args()) == 0 {
+			client.app.Commands[0].Run(c)
+			return fmt.Errorf("Expects at least one argument")
+		}
+		return client.crawl(c)
 	}
 
 	client.app = app
 	return client
 }
 
-// Crawl initiates the crawling steps
+// crawl initiates the crawling steps
 // Requires one or more valid url strings
-func (client *Client) Crawl(c *cli.Context) error {
+func (client *Client) crawl(c *cli.Context) error {
 	args := c.Args()
 
-	if len(args) == 0 {
-		client.app.Commands[0].Run(c)
-		return fmt.Errorf("Expects at least one argument")
-	}
-
-	normURL, _ := urlx.NormalizeString(args[0])
-	url, err := url.ParseRequestURI(normURL)
-
+	seedURL, err := util.NormalizeStringURL(args[0])
 	if err != nil {
 		return err
 	}
 
-	_ = util.Logger(c.Bool("verbose"))
-	fetcher := crawl.NewAsyncHTTPFetcher()
-	parser := crawl.NewAsyncHTTPParser(url, fetcher)
-	tracker := crawl.New(fetcher, parser)
-
-	crawler := crawl.NewAsyncHTTPCrawler(
-		fetcher,
-		tracker,
-		[]crawl.Worker{
-			parser.Worker(),
-		},
-	)
-
-	stmp, err := crawler.Crawl(url)
+	crawler := crawl.NewAsyncHTTPCrawler(seedURL)
+	stmp, err := crawler.Crawl(seedURL)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
 	outfile := c.String("o")
+	return client.export(outfile, stmp)
+}
+
+// export sitemap stmp to new file outfile
+func (client *Client) export(outfile string, stmp sitemap.Sitemapper) error {
 	f, err := os.Create(outfile)
 	if err != nil {
 		return err
@@ -95,7 +85,6 @@ func (client *Client) Crawl(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
 	fmt.Printf("Sitemap exported to %s\n", outfile)
-	return err
+	return nil
 }

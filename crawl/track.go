@@ -8,17 +8,22 @@ import (
 	"github.com/willf/bloom"
 )
 
+// A Tracker is an Asynchronous worker interface
+// that is responsible for receiving URLs from the
 type Tracker interface {
-	// Retrieve Worker
-	Worker() Worker
-
 	// SetSitemapper provides the Tracker with
 	// a Sitemapper. The Tracker is responsible for
 	// building the providing the Sitemapper with
-	// new URL data
+	// new URL data.
 	SetSitemapper(sitemap.Sitemapper)
+
+	// Retrieve Worker
+	Worker() Worker
 }
 
+// An AsyncHttpTracker is an Asynchronous worker struct
+// that is responsible for receiving URLs from a Parser
+// and passing the uncrawled URLs to the Fetcher
 type AsyncHttpTracker struct {
 	//Tracker is an Asynchronous Worker
 	*AsyncWorker
@@ -29,7 +34,7 @@ type AsyncHttpTracker struct {
 	sitemapper sitemap.Sitemapper
 }
 
-func New(fetcher Fetcher, parser Parser) *AsyncHttpTracker {
+func NewAsyncHttpTracker(fetcher Fetcher, parser Parser) *AsyncHttpTracker {
 	filter := bloom.New(20000, 5)
 	t := &AsyncHttpTracker{
 		AsyncWorker: &AsyncWorker{
