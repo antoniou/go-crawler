@@ -13,9 +13,7 @@ func NormalizeURL(orig *url.URL) (*url.URL, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	u, err := url.ParseRequestURI(normURL)
-	u.RawQuery = ""
 	return u, err
 }
 

@@ -33,6 +33,7 @@ type AsyncHttpTracker struct {
 }
 
 func NewAsyncHttpTracker(fetcher Fetcher, parser Parser) *AsyncHttpTracker {
+	// FIXME Revisit bloom filter size as future work
 	filter := bloom.New(20000, 5)
 	t := &AsyncHttpTracker{
 		AsyncWorker: &AsyncWorker{
@@ -51,13 +52,20 @@ func (t *AsyncHttpTracker) Run() error {
 	t.Worker().SetState(RUNNING)
 	for {
 		t.Worker().SetState(WAITING)
-		res, _ := t.parser.Retrieve()
-		t.Worker().SetState(RUNNING)
-		t.handle(res)
+		select {
+		case res := <-*t.parser.ResponseChannel():
+			t.Worker().SetState(RUNNING)
+			if err := t.handleResponse(res); err != nil {
+				continue
+			}
+		case <-t.AsyncWorker.Quit:
+			t.Worker().SetState(STOPPED)
+			return nil
+		}
 	}
 }
 
-func (t *AsyncHttpTracker) handle(m *ParseMessage) error {
+func (t *AsyncHttpTracker) handleResponse(m *ParseMessage) error {
 	sURL := m.Response.String()
 	if t.filter.TestAndAddString(sURL) {
 		return nil

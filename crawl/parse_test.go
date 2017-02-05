@@ -41,12 +41,12 @@ type ParseTestSuite struct {
 }
 
 func NewTestParser(seedURL *url.URL, fetcher Fetcher) *AsyncHTTPParser {
-	resQueue := make(ParserResponseQueue)
+	resQueue := make(parserResponseQueue)
 	a := &AsyncHTTPParser{
 		AsyncWorker: NewAsyncWorker("Parser"),
 
 		fetcher:             fetcher,
-		ParserResponseQueue: &resQueue,
+		parserResponseQueue: &resQueue,
 		seed:                seedURL,
 	}
 	a.AsyncWorker.RunFunc = a.Run

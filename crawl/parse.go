@@ -10,16 +10,14 @@ import (
 	"golang.org/x/net/html"
 )
 
-type ParserResponseQueue chan *ParseMessage
+type parserResponseQueue chan *ParseMessage
 
 // Parser is an Asynchronous interface
 type Parser interface {
-	// Run starts the Parser
-	Run() error
-
-	// Retrieve provides results back from the Parser
-	// in the form of Urls
-	Retrieve() (m *ParseMessage, err error)
+	// ResponseChannel is a Getter returning
+	// the Parser's Channel  that consumers
+	// should be receiving results from
+	ResponseChannel() (responseQueue *parserResponseQueue)
 
 	// Retrieve Worker
 	Worker() Worker
@@ -30,7 +28,7 @@ type AsyncHTTPParser struct {
 	*AsyncWorker
 
 	fetcher             Fetcher
-	ParserResponseQueue *ParserResponseQueue
+	parserResponseQueue *parserResponseQueue
 	seed                *url.URL
 }
 
@@ -40,18 +38,21 @@ type ParseMessage struct {
 }
 
 func NewAsyncHTTPParser(seedURL *url.URL, fetcher Fetcher) *AsyncHTTPParser {
-	resQueue := make(ParserResponseQueue)
+	resQueue := make(parserResponseQueue)
 	a := &AsyncHTTPParser{
 		AsyncWorker: NewAsyncWorker("Parser"),
 
 		fetcher:             fetcher,
-		ParserResponseQueue: &resQueue,
+		parserResponseQueue: &resQueue,
 		seed:                seedURL,
 	}
 	a.AsyncWorker.RunFunc = a.Run
 	return a
 }
 
+// Run starts a loop that waits for requests
+// or the quit signal. Run will be interrupted
+// once the Stop method is used
 func (p *AsyncHTTPParser) Run() error {
 	p.AsyncWorker.SetState(RUNNING)
 	for {
@@ -65,7 +66,6 @@ func (p *AsyncHTTPParser) Run() error {
 			p.Worker().SetState(STOPPED)
 			return nil
 		}
-
 	}
 }
 
@@ -125,7 +125,7 @@ func (p *AsyncHTTPParser) extractLinks(res *FetchMessage) error {
 			inSeedDomain := strings.Index(normURL.String(), p.seed.String()) == 0
 			if hasProto && inSeedDomain {
 				util.Printf("Parser: Passing url %v to Tracker", normURL)
-				*p.ParserResponseQueue <- &ParseMessage{
+				*p.parserResponseQueue <- &ParseMessage{
 					Request:  res.Request,
 					Response: normURL,
 				}
@@ -136,14 +136,14 @@ func (p *AsyncHTTPParser) extractLinks(res *FetchMessage) error {
 	return nil
 }
 
-func (p *AsyncHTTPParser) Retrieve() (m *ParseMessage, err error) {
-	m = <-*p.ParserResponseQueue
-	return m, nil
-
+func (p *AsyncHTTPParser) ResponseChannel() *parserResponseQueue {
+	return p.parserResponseQueue
 }
 
-func (a *AsyncHTTPParser) Worker() Worker {
-	return a.AsyncWorker
+// Worker Returns the embedded AsyncWorker struct
+// which is used to Run and Stop the Parser worker
+func (p *AsyncHTTPParser) Worker() Worker {
+	return p.AsyncWorker
 }
 
 // Helper function to pull the href attribute from a Token
