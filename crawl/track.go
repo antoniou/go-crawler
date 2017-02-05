@@ -1,10 +1,10 @@
 package crawl
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/antoniou/go-crawler/sitemap"
+	"github.com/antoniou/go-crawler/util"
 	"github.com/willf/bloom"
 )
 
@@ -59,7 +59,7 @@ func (t *AsyncHttpTracker) handle(m *ParseMessage) error {
 		return nil
 	}
 
-	fmt.Printf("Tracker: Adding %s to sitemap\n", *m.Response)
+	util.Printf("Tracker: Adding %s to sitemap\n", *m.Response)
 	t.sitemapper.Add(m.Request.String(), *m.Response)
 	url, err := url.ParseRequestURI(*m.Response)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/antoniou/go-crawler/sitemap"
+	"github.com/antoniou/go-crawler/util"
 )
 
 // A Crawler crawls a domain and returns
@@ -48,10 +49,12 @@ func (c *AsyncHTTPCrawler) Crawl(url *url.URL) (sitemap.Sitemapper, error) {
 	c.tracker.SetSitemapper(stmp)
 
 	for _, worker := range c.workers {
-		fmt.Printf("Starting worker of type %v\n", worker.Type())
+		// util.Logger(verbose)
+		util.Printf("Starting worker of type %v\n", worker.Type())
 		go worker.Run()
 	}
 
+	fmt.Printf("Starting crawling of %v\n", url)
 	err := c.fetcher.Fetch(url)
 	if err != nil {
 		return nil, err

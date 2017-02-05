@@ -3,6 +3,7 @@ package sitemap
 import (
 	"fmt"
 
+	"github.com/antoniou/go-crawler/util"
 	"github.com/twmb/algoimpl/go/graph"
 )
 
@@ -65,17 +66,17 @@ func (s *GraphSitemap) SeedURL() string {
 // as an unprioritised String slice
 func (s *GraphSitemap) LinksFrom(url string) *[]string {
 	links := make([]string, 0, 100)
-	fmt.Printf("Neighbors of %s:\n", url)
+	util.Printf("Neighbors of %s:\n", url)
 	for _, node := range s.graph.Neighbors(*s.nodemap[url]) {
 		val := (*node.Value).(string)
-		fmt.Printf("%s\n", val)
+		util.Printf("%s\n", val)
 		links = append(links, val)
 	}
 	return &links
 }
 
 func (s *GraphSitemap) makeRoot(root *graph.Node) {
-	fmt.Printf("Adding ROOT node %s\n", (*root.Value).(string))
+	util.Printf("Adding ROOT node %s\n", (*root.Value).(string))
 	s.hasNodes = true
 	s.root = root
 }

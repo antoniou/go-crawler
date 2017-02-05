@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/antoniou/go-crawler/util"
 	"github.com/goware/urlx"
 )
 
@@ -83,7 +84,7 @@ func (a *AsyncHTTPFetcher) Fetch(url *url.URL) error {
 		return err
 	}
 	normURL, _ := urlx.Normalize(url)
-	fmt.Printf("Fetcher: Adding URL %v to request queue\n", normURL)
+	util.Printf("Fetcher: Adding URL %v to request queue\n", normURL)
 	normURLs, _ := urlx.Parse(normURL)
 	*a.requestQueue <- *normURLs
 	return nil

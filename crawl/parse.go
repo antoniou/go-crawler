@@ -114,9 +114,9 @@ func (p *AsyncHTTPParser) extractLinks(res *FetchMessage) error {
 			normURL := p.normalise(url)
 			hasProto := strings.Index(normURL, "http") == 0
 			inSeedDomain := strings.Index(normURL, p.seed.String()) == 0
-			// fmt.Printf("Parser %s: Has Proto %v, In Seed domain: %v\n", url, hasProto, inSeedDomain)
+			// util.Printf("Parser %s: Has Proto %v, In Seed domain: %v\n", url, hasProto, inSeedDomain)
 			if hasProto && inSeedDomain {
-				// fmt.Printf("Parser: Sending to Tracker %s\n", normURL)
+				// util.Printf("Parser: Sending to Tracker %s\n", normURL)
 				*p.ParserResponseQueue <- &ParseMessage{
 					Request:  res.Request,
 					Response: &normURL,
@@ -130,7 +130,7 @@ func (p *AsyncHTTPParser) extractLinks(res *FetchMessage) error {
 
 func (p *AsyncHTTPParser) Retrieve() (m *ParseMessage, err error) {
 	m = <-*p.ParserResponseQueue
-	// fmt.Printf("Parser: %s -> %s\n", m.Request.String(), *m.Response)
+	// util.Printf("Parser: %s -> %s\n", m.Request.String(), *m.Response)
 	return m, nil
 
 }
@@ -151,7 +151,7 @@ func (p *AsyncHTTPParser) normalise(path string) string {
 
 	// normURL := strings.TrimSuffix(path, "?"+parsedURL.RawQuery)
 	normalized, _ := urlx.Normalize(parsedURL)
-	// fmt.Printf("\n\nParser: Normalised url for %s is %s\n\n", path, normalized)
+	// util.Printf("\n\nParser: Normalised url for %s is %s\n\n", path, normalized)
 	return normalized
 }
 
