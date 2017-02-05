@@ -13,7 +13,7 @@ var logger *CustomLog
 
 //Logger returns the singleton logger
 func Logger(verbose ...bool) *CustomLog {
-	if logger == nil {
+	if logger == nil || logger.verbose != verbose[0] {
 		logger = &CustomLog{
 			verbose: verbose[0],
 		}
@@ -32,15 +32,11 @@ func (c *CustomLog) Println(v ...interface{}) {
 // Println wraps around log.Println
 // Prints only when verbose mode is true
 func Println(v ...interface{}) {
-	if logger.verbose {
-		log.Println(v)
-	}
+	logger.Println(v)
 }
 
 // Printf wraps around log.Printf
 // Prints only when verbose mode is true
 func Printf(format string, v ...interface{}) {
-	if logger.verbose {
-		log.Printf(format, v)
-	}
+	logger.Println(v)
 }
