@@ -90,11 +90,15 @@ The overall time complexity should then be:
 O(max(N, M))
 ```
 
+## Performance
+At the moment there are 4 asynchronous workers that handle the crawling. Components are working in parallel and are communicating asynchronously, however each component is currently single threaded.
+
+To improve performance, we can have multiple workers of each type waiting to receive and process work. To achieve this, we'd need to extract the channels from each individual component, so that each channel can have multiple receivers.
 
 
 ## Future Work/Improvements:
-1. Parallelize implementation even further
-1. Bloom Filter False-positive Rate:
+1. Parallelize implementation even further as described in [Performance](#Performance)
+1. Bloom Filter False-positive Rate: We make use of [Bloom Filters](https://en.wikipedia.org/wiki/Bloom_filter?oldformat=true) to detect whether a page has been crawled or not. If the size of the bloom filters is not adequately large, it can have a false positive response. To deal with this, we'd have to create an adequately large filter.  
 1. URLs that time-out
-1. Use robots.txt and existing sitemap
-1. At the moment, the crawler limits itself within a single scheme (e.g, http). For example, if  http://www.example.com is given as input, the crawler will not follow links to https://www.example.com/about. This is an improvement that the crawler needs
+1. Use robots.txt and existing sitemap to also increase performance
+1. At the moment, the crawler limits itself within a single scheme (e.g, http). For example, if  http://www.example.com is given as input, the crawler will not follow links to https://www.example.com/about. This is an improvement that the crawler needs.
