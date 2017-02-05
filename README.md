@@ -45,14 +45,24 @@ The solution goes through two major phases:
 Crawling happens with asynchronous channel-based communication between the following components:
 1. Fetcher: Awaits for requests to fetch pages, and hands over responses to the requests to the Parser
 2. Parser: Awaits for http responses (from Fetcher), parses the responses and hands over URLs that are found to the Tracker
-3. Tracker: Awaits for URLs that have been found (from Parser) and checks whether the URLs have been already crawled. If not, the Tracker hands over new requests to the fetcher
+3. Tracker: Awaits for URLs that have been found (from Parser) and checks whether the URLs have been already crawled. If not, the Tracker hands over new requests to the fetcher.
+4. Sitemapper: Holds the sitemap representation and awaits to receive new nodes and edges to add to the sitemap (from the Tracker)
 
-![crawl](https://github.com/antoniou/go-crawler/dotgraph/crawlGraph.png "Crawling stage architecture")
+The Crawler is the orchestrating component that starts all the workers and awaits for all the workers to be in "WAITING" state, to detect that the work has finished.
+
+![crawl](https://raw.githubusercontent.com/antoniou/go-crawler/master/dotgraph/crawlGraph.png "Crawling stage architecture")
+
+### Exporting the sitemap
+After crawling the site, the sitemap is exported using an Exported. The default Exporter outputs the sitemap to a file using an indented structure to represent the links between pages.
+The Crawler initiates the export by creating a new Exporter. The exporter then queries the Sitemapper to walk through the Graph
+
+![export](https://github.com/antoniou/go-crawler/raw/master/dotgraph/exportgraph.png "Exporting sitemap stage architecture")
 
 ## Asymptotic Complexity:
 #### Space Complexity :
 The solution makes use of bloom filters, graphs and hashmaps:
 Given N crawled pages and M links between the pages, their space complexity is:
+
 1. Bloom Filters used for pages: O(1) - fixed Space
 2. HashMap used for pages: O(N)
 3. Graph Nodes used for pages: O(N)
@@ -64,11 +74,13 @@ O(max(N, M))
 ```
 #### Time Complexity:
 The solution goes through the following phases:
+
 1. Crawling the site, and making sure that the same page is not crawled twice
 2. Creating an in-memory representation of the site-map
 3. Exporting the sitemap to a file representation
 
 Given N crawled pages and M links between the pages, the time complexity of each step should be:
+
 1. Crawling: O(N)
 1. In-memory representation: O(max(N, M))
 1. Exporting sitemap: O(max(N, M))

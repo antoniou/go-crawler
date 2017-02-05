@@ -1,0 +1,4 @@
+digraph G {
+Crawler -> Exporter[label="Export Sitemap"]
+Exporter -> Sitemapper[label="Get sitemap info"];
+}

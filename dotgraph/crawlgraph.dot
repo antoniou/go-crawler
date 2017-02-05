@@ -1,0 +1,7 @@
+digraph G {
+Crawler -> Fetcher[label="Fetch URL"];
+Fetcher -> Parser[label="FetchMessage"];
+Parser  -> Tracker[label="ParseMessage"];
+Tracker -> Fetcher[label="Fetch URL"];
+Tracker -> Sitemapper[label="Add URL/Link"];
+}
