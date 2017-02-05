@@ -102,3 +102,4 @@ To improve performance, we can have multiple workers of each type waiting to rec
 1. URLs that time-out
 1. Use robots.txt and existing sitemap to also increase performance
 1. At the moment, the crawler limits itself within a single scheme (e.g, http). For example, if  http://www.example.com is given as input, the crawler will not follow links to https://www.example.com/about. This is an improvement that the crawler needs.
+1. Queries (e.g, ?account=21312) and Fragments (#About) are not removed, hence a page can be crawled multiple times because of them.
