@@ -34,7 +34,22 @@ Certain assumptions about the requirements should be made:
 1. The crawler does crawl subdomains of the specific domain provided
 1. If a specific path within a domain is given
 
-### Asymptotic Complexity:
+
+## Architecture
+The solution goes through two major phases:
+
+1. Crawling the site and creating an in-memory representation of a sitemap
+1. Exporting the sitemap to a file representation
+
+### Crawling the site
+Crawling happens with asynchronous channel-based communication between the following components:
+1. Fetcher: Awaits for requests to fetch pages, and hands over responses to the requests to the Parser
+2. Parser: Awaits for http responses (from Fetcher), parses the responses and hands over URLs that are found to the Tracker
+3. Tracker: Awaits for URLs that have been found (from Parser) and checks whether the URLs have been already crawled. If not, the Tracker hands over new requests to the fetcher
+
+![crawl](https://github.com/antoniou/go-crawler/dotgraph/crawlGraph.png "Crawling stage architecture")
+
+## Asymptotic Complexity:
 #### Space Complexity :
 The solution makes use of bloom filters, graphs and hashmaps:
 Given N crawled pages and M links between the pages, their space complexity is:
@@ -45,7 +60,7 @@ Given N crawled pages and M links between the pages, their space complexity is:
 
 Therefore, the asymptotic space complexity is linear to the maximum of pages and links between them:
 ```
-O(max(m, n))
+O(max(N, M))
 ```
 #### Time Complexity:
 The solution goes through the following phases:
