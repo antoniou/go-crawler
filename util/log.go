@@ -25,7 +25,7 @@ func Logger(verbose bool) *CustomLog {
 // only when in verbose mode
 func (c *CustomLog) Println(v ...interface{}) {
 	if c.verbose {
-		log.Println(v)
+		log.Println(v...)
 	}
 }
 
@@ -33,7 +33,7 @@ func (c *CustomLog) Println(v ...interface{}) {
 // only when in verbose mode
 func (c *CustomLog) Printf(format string, v ...interface{}) {
 	if c.verbose {
-		log.Printf(format, v)
+		log.Printf(format, v...)
 	}
 }
 
@@ -43,7 +43,7 @@ func Println(v ...interface{}) {
 	if logger == nil {
 		Logger(false)
 	}
-	logger.Println(v)
+	logger.Println(v...)
 }
 
 // Printf wraps around log.Printf
@@ -52,5 +52,5 @@ func Printf(format string, v ...interface{}) {
 	if logger == nil {
 		Logger(false)
 	}
-	logger.Println(v)
+	logger.Printf(format, v...)
 }

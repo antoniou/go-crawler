@@ -58,23 +58,28 @@ func (p *AsyncHTTPParser) Run() error {
 		p.AsyncWorker.SetState(WAITING)
 		select {
 		case res := <-*p.fetcher.ResponseChannel():
-			if res.Error != nil {
-				if res.Request.String() == p.seed.String() {
-					p.Stop()
-				}
-				log.Printf("Could not get %s: %v", res.Request.String(), res.Error)
+			if err := p.handleResponse(res); err != nil {
 				continue
 			}
-			p.AsyncWorker.SetState(RUNNING)
-			p.extractLinks(res)
-
-			// A quit has been received, Stop has been invoked
 		case <-p.AsyncWorker.Quit:
 			p.Worker().SetState(STOPPED)
 			return nil
 		}
 
 	}
+}
+
+func (p *AsyncHTTPParser) handleResponse(res *FetchMessage) error {
+	if res.Error != nil {
+		if res.Request.String() == p.seed.String() {
+			p.Stop()
+		}
+		log.Printf("Could not get %s: %v", res.Request.String(), res.Error)
+		return res.Error
+	}
+	p.AsyncWorker.SetState(RUNNING)
+	p.extractLinks(res)
+	return nil
 }
 
 func (p *AsyncHTTPParser) extractLinks(res *FetchMessage) error {
@@ -114,9 +119,7 @@ func (p *AsyncHTTPParser) extractLinks(res *FetchMessage) error {
 			normURL := p.normalise(url)
 			hasProto := strings.Index(normURL, "http") == 0
 			inSeedDomain := strings.Index(normURL, p.seed.String()) == 0
-			// util.Printf("Parser %s: Has Proto %v, In Seed domain: %v\n", url, hasProto, inSeedDomain)
 			if hasProto && inSeedDomain {
-				// util.Printf("Parser: Sending to Tracker %s\n", normURL)
 				*p.ParserResponseQueue <- &ParseMessage{
 					Request:  res.Request,
 					Response: &normURL,
@@ -130,7 +133,6 @@ func (p *AsyncHTTPParser) extractLinks(res *FetchMessage) error {
 
 func (p *AsyncHTTPParser) Retrieve() (m *ParseMessage, err error) {
 	m = <-*p.ParserResponseQueue
-	// util.Printf("Parser: %s -> %s\n", m.Request.String(), *m.Response)
 	return m, nil
 
 }
@@ -149,9 +151,8 @@ func (p *AsyncHTTPParser) normalise(path string) string {
 		return ""
 	}
 
-	// normURL := strings.TrimSuffix(path, "?"+parsedURL.RawQuery)
-	normalized, _ := urlx.Normalize(parsedURL)
-	// util.Printf("\n\nParser: Normalised url for %s is %s\n\n", path, normalized)
+	normURL = strings.TrimSuffix(path, "?"+parsedURL.RawQuery)
+	normalized, _ := urlx.NormalizeString(normURL)
 	return normalized
 }
 
