@@ -31,18 +31,20 @@ $ go-crawler --verbose -o tom_sitemap.out http://tomblomfield.com
 ## Assumptions
 Certain assumptions about the requirements should be made:
 
-1. The crawler does crawl subdomains of the specific domain provided
-1. If a specific path within a domain is given
+1. The crawler does not crawl subdomains of the specific domain provided.
+1. If a specific path within a domain is given as a seed URL ( e.g http://tomblomfield.com/about), then crawling will only happen within that path.
+1. Crawling happens only for a specific scheme (e.g, http or https, not both)
 
 
 ## Architecture
 The solution goes through two major phases:
 
-1. Crawling the site and creating an in-memory representation of a sitemap
-1. Exporting the sitemap to a file representation
+1. Crawling the site and creating an in-memory representation of a sitemap.
+1. Exporting the sitemap to a file representation.
 
 ### Crawling the site
 Crawling happens with asynchronous channel-based communication between the following components:
+
 1. Fetcher: Awaits for requests to fetch pages, and hands over responses to the requests to the Parser
 2. Parser: Awaits for http responses (from Fetcher), parses the responses and hands over URLs that are found to the Tracker
 3. Tracker: Awaits for URLs that have been found (from Parser) and checks whether the URLs have been already crawled. If not, the Tracker hands over new requests to the fetcher.
@@ -95,11 +97,14 @@ At the moment there are 4 asynchronous workers that handle the crawling. Compone
 
 To improve performance, we can have multiple workers of each type waiting to receive and process work. To achieve this, we'd need to extract the channels from each individual component, so that each channel can have multiple receivers.
 
+When crawling large documents, performance can be improved by chunking the document between several Parsers.
+
+We can also take advantage of files like robots.txt and the provided website sitemap as hints to the website structure.
 
 ## Future Work/Improvements:
 1. Parallelize implementation even further as described in [Performance](#Performance)
 1. Bloom Filter False-positive Rate: We make use of [Bloom Filters](https://en.wikipedia.org/wiki/Bloom_filter?oldformat=true) to detect whether a page has been crawled or not. If the size of the bloom filters is not adequately large, it can have a false positive response. To deal with this, we'd have to create an adequately large filter.  
-1. URLs that time-out
-1. Use robots.txt and existing sitemap to also increase performance
+1. Improve coverage of unit tests.
+1. At the moment, a site is completely crawled into a Sitemap in memory and then exported/shown. This will not work for large websites whose sitemap might not even fit in memory.
 1. At the moment, the crawler limits itself within a single scheme (e.g, http). For example, if  http://www.example.com is given as input, the crawler will not follow links to https://www.example.com/about. This is an improvement that the crawler needs.
 1. Queries (e.g, ?account=21312) and Fragments (#About) are not removed, hence a page can be crawled multiple times because of them.
