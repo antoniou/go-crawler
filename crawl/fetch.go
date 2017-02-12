@@ -8,6 +8,8 @@ import (
 	"github.com/antoniou/go-crawler/util"
 )
 
+const defaultChannelSize = 100
+
 // Fetcher is an Asynchronous Worker interface
 // that is responsible for Fetching URLs and
 // exposing a ResponseChannel where the results
@@ -61,8 +63,8 @@ type AsyncHTTPFetcher struct {
 // Fetcher, which should be done by using the
 // Run method
 func NewAsyncHTTPFetcher() *AsyncHTTPFetcher {
-	reqQueue := make(RequestQueue)
-	resQueue := make(FetchResponseQueue)
+	reqQueue := make(RequestQueue, defaultChannelSize)
+	resQueue := make(FetchResponseQueue, defaultChannelSize)
 	a := &AsyncHTTPFetcher{
 		AsyncWorker: NewAsyncWorker("Fetcher"),
 

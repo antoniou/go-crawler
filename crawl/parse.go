@@ -38,7 +38,7 @@ type ParseMessage struct {
 }
 
 func NewAsyncHTTPParser(seedURL *url.URL, fetcher Fetcher) *AsyncHTTPParser {
-	resQueue := make(parserResponseQueue)
+	resQueue := make(parserResponseQueue, defaultChannelSize)
 	a := &AsyncHTTPParser{
 		AsyncWorker: NewAsyncWorker("Parser"),
 
