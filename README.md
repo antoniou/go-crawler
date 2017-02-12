@@ -60,36 +60,19 @@ The Crawler initiates the export by creating a new Exporter. The exporter then q
 
 ![export](https://github.com/antoniou/go-crawler/raw/master/dotgraph/exportgraph.png "Exporting sitemap stage architecture")
 
-## Asymptotic Complexity:
-#### Space Complexity :
+#### Average Space Complexity :
 The solution makes use of bloom filters, graphs and hashmaps:
-Given N crawled pages and M links between the pages, their space complexity is:
+Given N crawled pages and M links between the pages, each of average size L, their space complexity is:
 
 1. Bloom Filters used for pages: O(1) - fixed Space
 2. HashMap used for pages: O(N)
 3. Graph Nodes used for pages: O(N)
-3. Graph Edges used for links: O(M)
+4. Graph Edges used for links: O(M)
+5. Storing the pages to be parsed: O(L), since the current Parser implementation parses one page at a time.
 
-Therefore, the asymptotic space complexity is linear to the maximum of pages and links between them:
+Therefore, the average space complexity is linear to the maximum of pages and links between them:
 ```
-O(max(N, M))
-```
-#### Time Complexity:
-The solution goes through the following phases:
-
-1. Crawling the site, and making sure that the same page is not crawled twice
-2. Creating an in-memory representation of the site-map
-3. Exporting the sitemap to a file representation
-
-Given N crawled pages and M links between the pages, the time complexity of each step should be:
-
-1. Crawling: O(N)
-1. In-memory representation: O(max(N, M))
-1. Exporting sitemap: O(max(N, M))
-
-The overall time complexity should then be:
-```
-O(max(N, M))
+O(N + M + L)
 ```
 
 ## Performance
