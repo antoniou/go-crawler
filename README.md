@@ -1,6 +1,6 @@
 # go-crawler [![Build Status](https://travis-ci.org/antoniou/go-crawler.svg?branch=master)](https://travis-ci.org/antoniou/go-crawler)
 
-A Web Crawler written in Go
+A Web Crawler written in Go. This was developed with the purpose of me trying to learn to write idiomatic Go
 
 The crawler is limited to one domain - Given domain http://www.example.com it will crawl all pages within the domain, but will not follow external links.
 
